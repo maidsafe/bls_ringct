@@ -1,7 +1,4 @@
-use blstrs::{
-    group::{Curve, Group},
-    G1Affine, G1Projective, Scalar,
-};
+use blstrs::{group::Group, G1Projective, Scalar};
 
 const DOMAIN: &[u8; 27] = b"blst-ringct-pedersen-commit";
 

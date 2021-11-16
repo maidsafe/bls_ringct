@@ -76,7 +76,7 @@ pub struct RingCTSignature {
 }
 
 impl RingCT {
-    fn sign(
+    pub fn sign(
         &self,
         msg: &[u8],
         mut rng: impl RngCore,
@@ -208,6 +208,9 @@ impl RingCT {
         );
 
         // We create a ring signature for each input
+        #[allow(non_snake_case)]
+        let G1 = G1Projective::generator();
+
         for (m, input) in self.true_inputs.iter().enumerate() {
             // for ring m, the true secret keys in this ring are ...
             let secret_keys = (
@@ -224,8 +227,8 @@ impl RingCT {
             let alpha = (Scalar::random(&mut rng), Scalar::random(&mut rng));
             c[m][(pi + 1) % ring_size] = c_hash(
                 msg,
-                G1Projective::generator() * alpha.0,
-                G1Projective::generator() * alpha.1,
+                G1 * alpha.0,
+                G1 * alpha.1,
                 hash_to_curve(rings[m][pi].0.into()) * alpha.0,
             );
 
@@ -233,8 +236,8 @@ impl RingCT {
                 let n = (pi + offset) % ring_size;
                 c[m][(n + 1) % ring_size] = c_hash(
                     msg,
-                    G1Projective::generator() * r[m][n].0 + rings[m][n].0 * c[m][n],
-                    G1Projective::generator() * r[m][n].1 + rings[m][n].1 * c[m][n],
+                    G1 * r[m][n].0 + rings[m][n].0 * c[m][n],
+                    G1 * r[m][n].1 + rings[m][n].1 * c[m][n],
                     hash_to_curve(rings[m][n].0.into()) * r[m][n].0 + key_images[m] * c[m][n],
                 );
             }
@@ -245,7 +248,6 @@ impl RingCT {
             );
 
             // For our sanity, check a few identities
-            let G1 = G1Projective::generator();
             assert_eq!(G1 * secret_keys.0, rings[m][pi].0.into());
             assert_eq!(G1 * secret_keys.1, rings[m][pi].1.into());
             assert_eq!(
@@ -312,7 +314,10 @@ impl RingCT {
     }
 }
 
-fn verify(msg: &[u8], sig: RingCTSignature, rings: Vec<Vec<(G1Affine, G1Affine)>>) -> bool {
+pub fn verify(msg: &[u8], sig: RingCTSignature, rings: Vec<Vec<(G1Affine, G1Affine)>>) -> bool {
+    #[allow(non_snake_case)]
+    let G1 = G1Projective::generator();
+
     // Verify key images are in G
     for key_image in sig.key_images.iter() {
         if !bool::from(key_image.is_on_curve()) {
@@ -328,8 +333,8 @@ fn verify(msg: &[u8], sig: RingCTSignature, rings: Vec<Vec<(G1Affine, G1Affine)>
         for (n, keys) in ring.iter().enumerate() {
             cprime[(n + 1) % ring.len()] = c_hash(
                 msg,
-                G1Projective::generator() * sig.r[m][n].0 + keys.0 * cprime[n],
-                G1Projective::generator() * sig.r[m][n].1 + keys.1 * cprime[n],
+                G1 * sig.r[m][n].0 + keys.0 * cprime[n],
+                G1 * sig.r[m][n].1 + keys.1 * cprime[n],
                 hash_to_curve(keys.0.into()) * sig.r[m][n].0 + sig.key_images[m] * cprime[n],
             );
         }
