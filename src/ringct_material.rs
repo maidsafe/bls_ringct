@@ -222,24 +222,21 @@ impl RingCT {
             println!("pseudo comm: {:?}", revealed_pseudo_commitments[m]);
 
             let alpha = (Scalar::random(&mut rng), Scalar::random(&mut rng));
-            c[m][(pi + 1) % ring_size] = hash_to_scalar(&[
+            c[m][(pi + 1) % ring_size] = c_hash(
                 msg,
-                &(G1Projective::generator() * alpha.0).to_compressed(),
-                &(G1Projective::generator() * alpha.1).to_compressed(),
-                &(hash_to_curve(rings[m][pi].0.into()) * alpha.0).to_compressed(),
-            ]);
+                G1Projective::generator() * alpha.0,
+                G1Projective::generator() * alpha.1,
+                hash_to_curve(rings[m][pi].0.into()) * alpha.0,
+            );
 
             for offset in 1..ring_size {
                 let n = (pi + offset) % ring_size;
-                c[m][(n + 1) % ring_size] = hash_to_scalar(&[
+                c[m][(n + 1) % ring_size] = c_hash(
                     msg,
-                    &(G1Projective::generator() * r[m][n].0 + rings[m][n].0 * c[m][n])
-                        .to_compressed(),
-                    &(G1Projective::generator() * r[m][n].1 + rings[m][n].1 * c[m][n])
-                        .to_compressed(),
-                    &(hash_to_curve(rings[m][n].0.into()) * r[m][n].0 + key_images[m] * c[m][n])
-                        .to_compressed(),
-                ]);
+                    G1Projective::generator() * r[m][n].0 + rings[m][n].0 * c[m][n],
+                    G1Projective::generator() * r[m][n].1 + rings[m][n].1 * c[m][n],
+                    hash_to_curve(rings[m][n].0.into()) * r[m][n].0 + key_images[m] * c[m][n],
+                );
             }
 
             r[m][pi] = (
@@ -329,13 +326,12 @@ fn verify(msg: &[u8], sig: RingCTSignature, rings: Vec<Vec<(G1Affine, G1Affine)>
         cprime[0] = sig.c0[m];
 
         for (n, keys) in ring.iter().enumerate() {
-            cprime[(n + 1) % ring.len()] = hash_to_scalar(&[
+            cprime[(n + 1) % ring.len()] = c_hash(
                 msg,
-                &(G1Projective::generator() * sig.r[m][n].0 + keys.0 * cprime[n]).to_compressed(),
-                &(G1Projective::generator() * sig.r[m][n].1 + keys.1 * cprime[n]).to_compressed(),
-                &(hash_to_curve(keys.0.into()) * sig.r[m][n].0 + sig.key_images[m] * cprime[n])
-                    .to_compressed(),
-            ]);
+                G1Projective::generator() * sig.r[m][n].0 + keys.0 * cprime[n],
+                G1Projective::generator() * sig.r[m][n].1 + keys.1 * cprime[n],
+                hash_to_curve(keys.0.into()) * sig.r[m][n].0 + sig.key_images[m] * cprime[n],
+            );
         }
 
         println!("c': {:#?}", cprime);
@@ -349,6 +345,16 @@ fn verify(msg: &[u8], sig: RingCTSignature, rings: Vec<Vec<(G1Affine, G1Affine)>
     true
 }
 
+fn c_hash(msg: &[u8], l1: G1Projective, l2: G1Projective, r1: G1Projective) -> Scalar {
+    hash_to_scalar(&[
+        msg,
+        &l1.to_compressed(),
+        &l2.to_compressed(),
+        &r1.to_compressed(),
+    ])
+}
+
+/// Hashes given material to a Scalar, repeated hashing is used if a hash can not be interpreted as a Scalar
 fn hash_to_scalar(material: &[&[u8]]) -> Scalar {
     let mut sha3 = Sha3::v256();
     for chunk in material {
