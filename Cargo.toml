@@ -1,0 +1,14 @@
+[package]
+name = "blst-ringct"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# blstrs = "0.4.1"
+blstrs = { path = "../blstrs" }
+rand_core = "0.6.3"
+tiny-keccak = { version = "2.0", features = ["sha3"] }
+
+[dev-dependencies]
+quickcheck = "1"
+quickcheck_macros = "1"
