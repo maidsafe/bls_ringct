@@ -9,21 +9,26 @@ use tiny_keccak::{Hasher, Sha3};
 
 use crate::pedersen_commitment::{PedersenCommitter, RevealedCommitment};
 
+/// Hashes a point to another point on the G1 curve
+fn hash_to_curve(p: G1Projective) -> G1Projective {
+    const DOMAIN: &[u8; 35] = b"blst-ringct-signature-hash-to-curve";
+    G1Projective::hash_to_curve(&p.to_compressed(), DOMAIN, &[])
+}
+
 pub struct TrueInput {
     pub secret_key: Scalar,
     pub revealed_commitment: RevealedCommitment,
 }
 
-const DOMAIN: &[u8; 21] = b"blst-ringct-signature";
-
 impl TrueInput {
-    fn public_key(&self) -> G1Projective {
+    pub fn public_key(&self) -> G1Projective {
         G1Projective::generator() * self.secret_key
     }
 
-    fn key_image(&self) -> G1Projective {
-        let pub_key_bytes = self.public_key().to_compressed();
-        G1Projective::hash_to_curve(&pub_key_bytes, DOMAIN, &[]) * self.secret_key
+    /// Computes the Key Image for this inputs keypair
+    /// A key image is defined to be I = x * Hp(P)
+    pub fn key_image(&self) -> G1Projective {
+        hash_to_curve(self.public_key()) * self.secret_key
     }
 }
 
@@ -221,9 +226,7 @@ impl RingCT {
                 msg,
                 &(G1Projective::generator() * alpha.0).to_compressed(),
                 &(G1Projective::generator() * alpha.1).to_compressed(),
-                &(G1Projective::hash_to_curve(&rings[m][pi].0.to_compressed(), DOMAIN, &[])
-                    * alpha.0)
-                    .to_compressed(),
+                &(hash_to_curve(rings[m][pi].0.into()) * alpha.0).to_compressed(),
             ]);
 
             for offset in 1..ring_size {
@@ -234,9 +237,7 @@ impl RingCT {
                         .to_compressed(),
                     &(G1Projective::generator() * r[m][n].1 + rings[m][n].1 * c[m][n])
                         .to_compressed(),
-                    &(G1Projective::hash_to_curve(&rings[m][n].0.to_compressed(), DOMAIN, &[])
-                        * r[m][n].0
-                        + key_images[m] * c[m][n])
+                    &(hash_to_curve(rings[m][n].0.into()) * r[m][n].0 + key_images[m] * c[m][n])
                         .to_compressed(),
                 ]);
             }
@@ -275,41 +276,28 @@ impl RingCT {
                 G1 * (alpha.1 - c[m][pi] * secret_keys.1) + rings[m][pi].1 * c[m][pi]
             );
             assert_eq!(
-                G1Projective::hash_to_curve(&rings[m][pi].0.to_compressed(), DOMAIN, &[])
-                    * r[m][pi].0
-                    + key_images[m] * c[m][pi],
-                G1Projective::hash_to_curve(&rings[m][pi].0.to_compressed(), DOMAIN, &[])
-                    * (alpha.0 - c[m][pi] * secret_keys.0)
+                hash_to_curve(rings[m][pi].0.into()) * r[m][pi].0 + key_images[m] * c[m][pi],
+                hash_to_curve(rings[m][pi].0.into()) * (alpha.0 - c[m][pi] * secret_keys.0)
                     + key_images[m] * c[m][pi]
             );
             assert_eq!(
-                G1Projective::hash_to_curve(&rings[m][pi].1.to_compressed(), DOMAIN, &[])
-                    * r[m][pi].1
-                    + key_images[m] * c[m][pi],
-                G1Projective::hash_to_curve(&rings[m][pi].1.to_compressed(), DOMAIN, &[])
-                    * (alpha.1 - c[m][pi] * secret_keys.1)
+                hash_to_curve(rings[m][pi].1.into()) * r[m][pi].1 + key_images[m] * c[m][pi],
+                hash_to_curve(rings[m][pi].1.into()) * (alpha.1 - c[m][pi] * secret_keys.1)
                     + key_images[m] * c[m][pi]
             );
 
             assert_eq!(
-                G1Projective::hash_to_curve(&rings[m][pi].0.to_compressed(), DOMAIN, &[])
-                    * secret_keys.0,
+                hash_to_curve(rings[m][pi].0.into()) * secret_keys.0,
                 key_images[m]
             );
             assert_eq!(
-                G1Projective::hash_to_curve(&rings[m][pi].0.to_compressed(), DOMAIN, &[])
-                    * r[m][pi].0
-                    + key_images[m] * c[m][pi],
-                G1Projective::hash_to_curve(&rings[m][pi].0.to_compressed(), DOMAIN, &[])
-                    * (alpha.0 - c[m][pi] * secret_keys.0)
+                hash_to_curve(rings[m][pi].0.into()) * r[m][pi].0 + key_images[m] * c[m][pi],
+                hash_to_curve(rings[m][pi].0.into()) * (alpha.0 - c[m][pi] * secret_keys.0)
                     + key_images[m] * c[m][pi]
             );
             assert_eq!(
-                G1Projective::hash_to_curve(&rings[m][pi].1.to_compressed(), DOMAIN, &[])
-                    * r[m][pi].1
-                    + key_images[m] * c[m][pi],
-                G1Projective::hash_to_curve(&rings[m][pi].1.to_compressed(), DOMAIN, &[])
-                    * (alpha.1 - c[m][pi] * secret_keys.1)
+                hash_to_curve(rings[m][pi].1.into()) * r[m][pi].1 + key_images[m] * c[m][pi],
+                hash_to_curve(rings[m][pi].1.into()) * (alpha.1 - c[m][pi] * secret_keys.1)
                     + key_images[m] * c[m][pi]
             );
         }
@@ -345,9 +333,7 @@ fn verify(msg: &[u8], sig: RingCTSignature, rings: Vec<Vec<(G1Affine, G1Affine)>
                 msg,
                 &(G1Projective::generator() * sig.r[m][n].0 + keys.0 * cprime[n]).to_compressed(),
                 &(G1Projective::generator() * sig.r[m][n].1 + keys.1 * cprime[n]).to_compressed(),
-                &(G1Projective::hash_to_curve(&keys.0.to_compressed(), DOMAIN, &[])
-                    * sig.r[m][n].0
-                    + sig.key_images[m] * cprime[n])
+                &(hash_to_curve(keys.0.into()) * sig.r[m][n].0 + sig.key_images[m] * cprime[n])
                     .to_compressed(),
             ]);
         }
