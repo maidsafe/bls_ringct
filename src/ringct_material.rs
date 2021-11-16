@@ -295,7 +295,23 @@ impl RingCT {
                 G1Projective::hash_to_curve(&rings[m][pi].0.to_compressed(), DOMAIN, &[])
                     * secret_keys.0,
                 key_images[m]
-            )
+            );
+            assert_eq!(
+                G1Projective::hash_to_curve(&rings[m][pi].0.to_compressed(), DOMAIN, &[])
+                    * r[m][pi].0
+                    + key_images[m] * c[m][pi],
+                G1Projective::hash_to_curve(&rings[m][pi].0.to_compressed(), DOMAIN, &[])
+                    * (alpha.0 - c[m][pi] * secret_keys.0)
+                    + key_images[m] * c[m][pi]
+            );
+            assert_eq!(
+                G1Projective::hash_to_curve(&rings[m][pi].1.to_compressed(), DOMAIN, &[])
+                    * r[m][pi].1
+                    + key_images[m] * c[m][pi],
+                G1Projective::hash_to_curve(&rings[m][pi].1.to_compressed(), DOMAIN, &[])
+                    * (alpha.1 - c[m][pi] * secret_keys.1)
+                    + key_images[m] * c[m][pi]
+            );
         }
 
         let sig = RingCTSignature {
