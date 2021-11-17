@@ -89,8 +89,6 @@ impl RingCT {
             assert_eq!(decoy_inputs.len(), self.true_inputs.len());
         }
 
-        let pi = rng.next_u32() as usize % ring_size;
-
         let committer = PedersenCommitter::default();
         let revealed_pseudo_commitments =
             Vec::from_iter(self.true_inputs.iter().map(|input| RevealedCommitment {
@@ -154,7 +152,6 @@ impl RingCT {
                 input,
                 self.decoy_inputs.iter().map(|decoy| decoy[m]).collect(),
                 revealed_pseudo_commitments[m],
-                pi,
                 &mut rng,
             ));
         }
@@ -168,12 +165,14 @@ fn ringct_mlsag_sign(
     input: &TrueInput,
     decoy_inputs: Vec<DecoyInput>,
     revealed_pseudo_commitment: RevealedCommitment,
-    pi: usize, // TODO: try randomly generating pi inside this function
     mut rng: impl RngCore,
 ) -> MlsagSignature {
     let committer = PedersenCommitter::default();
     #[allow(non_snake_case)]
     let G1 = G1Projective::generator(); // TAI: should we use committer.G instead?
+
+    // The position of the true input will be randomply placed amongst the decoys
+    let pi = rng.next_u32() as usize % (decoy_inputs.len() + 1);
 
     let public_keys: Vec<G1Affine> = {
         let mut keys = Vec::from_iter(decoy_inputs.iter().map(DecoyInput::public_key));
