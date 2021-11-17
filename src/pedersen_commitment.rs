@@ -1,4 +1,7 @@
-use blstrs::{group::Group, G1Projective, Scalar};
+use blstrs::{
+    group::{ff::Field, Group},
+    G1Projective, Scalar,
+};
 use rand_core::RngCore;
 
 const DOMAIN: &[u8; 27] = b"blst-ringct-pedersen-commit";
