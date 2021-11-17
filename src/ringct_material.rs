@@ -191,127 +191,130 @@ impl RingCT {
 
         // At this point we've prepared our data for the ring signature, all that's left to do is perform the MLSAG signature
 
-        let key_images = Vec::from_iter(self.true_inputs.iter().map(TrueInput::key_image));
-
-        // MxN
-        let mut c: Vec<Vec<Scalar>> = Vec::from_iter(
-            iter::repeat(Vec::from_iter(iter::repeat(Scalar::zero()).take(ring_size)))
-                .take(self.true_inputs.len()),
-        );
-
-        // MxNx2
-        let mut r: Vec<Vec<(Scalar, Scalar)>> = Vec::from_iter(
-            iter::repeat(Vec::from_iter(
-                iter::repeat((Scalar::random(&mut rng), Scalar::random(&mut rng))).take(ring_size),
-            ))
-            .take(self.true_inputs.len()),
-        );
-
         // We create a ring signature for each input
-        #[allow(non_snake_case)]
-        let G1 = G1Projective::generator();
-
+        let mut c0s = Vec::new();
+        let mut rs = Vec::new();
+        let mut images = Vec::new();
         for (m, input) in self.true_inputs.iter().enumerate() {
-            // for ring m, the true secret keys in this ring are ...
-            let secret_keys = (
-                input.secret_key,
-                input.revealed_commitment.blinding - revealed_pseudo_commitments[m].blinding,
-            );
-            assert_eq!(
-                committer.commit(0.into(), secret_keys.1),
-                rings[m][pi].1.into()
-            );
-            println!("input  comm: {:?}", input.revealed_commitment);
-            println!("pseudo comm: {:?}", revealed_pseudo_commitments[m]);
-
-            let alpha = (Scalar::random(&mut rng), Scalar::random(&mut rng));
-            c[m][(pi + 1) % ring_size] = c_hash(
+            let (c0, r, key_image) = ringct_mlsag_sign(
                 msg,
-                G1 * alpha.0,
-                G1 * alpha.1,
-                hash_to_curve(rings[m][pi].0.into()) * alpha.0,
+                input,
+                revealed_pseudo_commitments[m],
+                pi,
+                &rings[m],
+                &mut rng,
             );
-
-            for offset in 1..ring_size {
-                let n = (pi + offset) % ring_size;
-                c[m][(n + 1) % ring_size] = c_hash(
-                    msg,
-                    G1 * r[m][n].0 + rings[m][n].0 * c[m][n],
-                    G1 * r[m][n].1 + rings[m][n].1 * c[m][n],
-                    hash_to_curve(rings[m][n].0.into()) * r[m][n].0 + key_images[m] * c[m][n],
-                );
-            }
-
-            r[m][pi] = (
-                alpha.0 - c[m][pi] * secret_keys.0,
-                alpha.1 - c[m][pi] * secret_keys.1,
-            );
-
-            // For our sanity, check a few identities
-            assert_eq!(G1 * secret_keys.0, rings[m][pi].0.into());
-            assert_eq!(G1 * secret_keys.1, rings[m][pi].1.into());
-            assert_eq!(
-                G1 * (alpha.0 - c[m][pi] * secret_keys.0),
-                G1 * alpha.0 - G1 * (c[m][pi] * secret_keys.0)
-            );
-            assert_eq!(
-                G1 * (alpha.1 - c[m][pi] * secret_keys.1),
-                G1 * alpha.1 - G1 * (c[m][pi] * secret_keys.1)
-            );
-            assert_eq!(
-                G1 * (alpha.0 - c[m][pi] * secret_keys.0) + rings[m][pi].0 * c[m][pi],
-                G1 * alpha.0
-            );
-            assert_eq!(
-                G1 * (alpha.1 - c[m][pi] * secret_keys.1) + rings[m][pi].1 * c[m][pi],
-                G1 * alpha.1
-            );
-            assert_eq!(
-                G1 * r[m][pi].0 + rings[m][pi].0 * c[m][pi],
-                G1 * (alpha.0 - c[m][pi] * secret_keys.0) + rings[m][pi].0 * c[m][pi]
-            );
-            assert_eq!(
-                G1 * r[m][pi].1 + rings[m][pi].1 * c[m][pi],
-                G1 * (alpha.1 - c[m][pi] * secret_keys.1) + rings[m][pi].1 * c[m][pi]
-            );
-            assert_eq!(
-                hash_to_curve(rings[m][pi].0.into()) * r[m][pi].0 + key_images[m] * c[m][pi],
-                hash_to_curve(rings[m][pi].0.into()) * (alpha.0 - c[m][pi] * secret_keys.0)
-                    + key_images[m] * c[m][pi]
-            );
-            assert_eq!(
-                hash_to_curve(rings[m][pi].1.into()) * r[m][pi].1 + key_images[m] * c[m][pi],
-                hash_to_curve(rings[m][pi].1.into()) * (alpha.1 - c[m][pi] * secret_keys.1)
-                    + key_images[m] * c[m][pi]
-            );
-
-            assert_eq!(
-                hash_to_curve(rings[m][pi].0.into()) * secret_keys.0,
-                key_images[m]
-            );
-            assert_eq!(
-                hash_to_curve(rings[m][pi].0.into()) * r[m][pi].0 + key_images[m] * c[m][pi],
-                hash_to_curve(rings[m][pi].0.into()) * (alpha.0 - c[m][pi] * secret_keys.0)
-                    + key_images[m] * c[m][pi]
-            );
-            assert_eq!(
-                hash_to_curve(rings[m][pi].1.into()) * r[m][pi].1 + key_images[m] * c[m][pi],
-                hash_to_curve(rings[m][pi].1.into()) * (alpha.1 - c[m][pi] * secret_keys.1)
-                    + key_images[m] * c[m][pi]
-            );
+            c0s.push(c0);
+            rs.push(r);
+            images.push(key_image.to_affine());
         }
 
         let sig = RingCTSignature {
-            c0: Vec::from_iter(c.iter().map(|c| c[0])),
-            r,
-            key_images: Vec::from_iter(key_images.iter().map(Curve::to_affine)),
+            c0: c0s,
+            r: rs,
+            key_images: images,
         };
 
         println!("pi: {}", pi);
-        println!("c: {:#?}", c);
 
         (sig, rings)
     }
+}
+
+fn ringct_mlsag_sign(
+    msg: &[u8],
+    input: &TrueInput,
+    revealed_pseudo_commitment: RevealedCommitment,
+    pi: usize, // TODO: try randomly generating pi inside this function
+    ring: &[(G1Affine, G1Affine)],
+    mut rng: impl RngCore,
+) -> (Scalar, Vec<(Scalar, Scalar)>, G1Projective) {
+    let committer = PedersenCommitter::default();
+    #[allow(non_snake_case)]
+    let G1 = G1Projective::generator(); // TAI: should we use committer.G instead?
+
+    // for ring m, the true secret keys in this ring are ...
+    let secret_keys = (
+        input.secret_key,
+        input.revealed_commitment.blinding - revealed_pseudo_commitment.blinding,
+    );
+    assert_eq!(committer.commit(0.into(), secret_keys.1), ring[pi].1.into());
+    let key_image = input.key_image();
+    let alpha = (Scalar::random(&mut rng), Scalar::random(&mut rng));
+    let mut r: Vec<(Scalar, Scalar)> = (0..ring.len())
+        .map(|_| (Scalar::random(&mut rng), Scalar::random(&mut rng)))
+        .collect();
+    let mut c: Vec<Scalar> = (0..ring.len()).map(|_| Scalar::zero()).collect();
+
+    c[(pi + 1) % ring.len()] = c_hash(
+        msg,
+        G1 * alpha.0,
+        G1 * alpha.1,
+        hash_to_curve(ring[pi].0.into()) * alpha.0,
+    );
+
+    for offset in 1..ring.len() {
+        let n = (pi + offset) % ring.len();
+        c[(n + 1) % ring.len()] = c_hash(
+            msg,
+            G1 * r[n].0 + ring[n].0 * c[n],
+            G1 * r[n].1 + ring[n].1 * c[n],
+            hash_to_curve(ring[n].0.into()) * r[n].0 + key_image * c[n],
+        );
+    }
+
+    r[pi] = (
+        alpha.0 - c[pi] * secret_keys.0,
+        alpha.1 - c[pi] * secret_keys.1,
+    );
+
+    // For our sanity, check a few identities
+    assert_eq!(G1 * secret_keys.0, ring[pi].0.into());
+    assert_eq!(G1 * secret_keys.1, ring[pi].1.into());
+    assert_eq!(
+        G1 * (alpha.0 - c[pi] * secret_keys.0),
+        G1 * alpha.0 - G1 * (c[pi] * secret_keys.0)
+    );
+    assert_eq!(
+        G1 * (alpha.1 - c[pi] * secret_keys.1),
+        G1 * alpha.1 - G1 * (c[pi] * secret_keys.1)
+    );
+    assert_eq!(
+        G1 * (alpha.0 - c[pi] * secret_keys.0) + ring[pi].0 * c[pi],
+        G1 * alpha.0
+    );
+    assert_eq!(
+        G1 * (alpha.1 - c[pi] * secret_keys.1) + ring[pi].1 * c[pi],
+        G1 * alpha.1
+    );
+    assert_eq!(
+        G1 * r[pi].0 + ring[pi].0 * c[pi],
+        G1 * (alpha.0 - c[pi] * secret_keys.0) + ring[pi].0 * c[pi]
+    );
+    assert_eq!(
+        G1 * r[pi].1 + ring[pi].1 * c[pi],
+        G1 * (alpha.1 - c[pi] * secret_keys.1) + ring[pi].1 * c[pi]
+    );
+    assert_eq!(
+        hash_to_curve(ring[pi].0.into()) * r[pi].0 + key_image * c[pi],
+        hash_to_curve(ring[pi].0.into()) * (alpha.0 - c[pi] * secret_keys.0) + key_image * c[pi]
+    );
+    assert_eq!(
+        hash_to_curve(ring[pi].1.into()) * r[pi].1 + key_image * c[pi],
+        hash_to_curve(ring[pi].1.into()) * (alpha.1 - c[pi] * secret_keys.1) + key_image * c[pi]
+    );
+
+    assert_eq!(hash_to_curve(ring[pi].0.into()) * secret_keys.0, key_image);
+    assert_eq!(
+        hash_to_curve(ring[pi].0.into()) * r[pi].0 + key_image * c[pi],
+        hash_to_curve(ring[pi].0.into()) * (alpha.0 - c[pi] * secret_keys.0) + key_image * c[pi]
+    );
+    assert_eq!(
+        hash_to_curve(ring[pi].1.into()) * r[pi].1 + key_image * c[pi],
+        hash_to_curve(ring[pi].1.into()) * (alpha.1 - c[pi] * secret_keys.1) + key_image * c[pi]
+    );
+
+    (c[0], r, key_image)
 }
 
 pub fn verify(msg: &[u8], sig: RingCTSignature, rings: Vec<Vec<(G1Affine, G1Affine)>>) -> bool {
