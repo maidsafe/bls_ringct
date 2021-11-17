@@ -30,6 +30,14 @@ impl TrueInput {
     pub fn key_image(&self) -> G1Projective {
         hash_to_curve(self.public_key()) * self.secret_key
     }
+
+    /// Generate a pseudo-commitment to the input amount
+    pub fn random_pseudo_commitment(&self, mut rng: impl RngCore) -> RevealedCommitment {
+        RevealedCommitment {
+            value: self.revealed_commitment.value,
+            blinding: Scalar::random(&mut rng),
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -172,10 +180,7 @@ fn ringct_mlsag_sign(
         keys
     };
 
-    let revealed_pseudo_commitment = RevealedCommitment {
-        value: input.revealed_commitment.value, // TODO: this should be a function on TrueInput
-        blinding: Scalar::random(&mut rng),
-    };
+    let revealed_pseudo_commitment = input.random_pseudo_commitment(&mut rng);
 
     let commitments: Vec<G1Affine> = {
         let mut commitments = Vec::from_iter(decoy_inputs.iter().map(DecoyInput::commitment));
