@@ -4,8 +4,6 @@ use blstrs::{
 };
 use rand_core::RngCore;
 
-const DOMAIN: &[u8; 27] = b"blst-ringct-pedersen-commit";
-
 /// PedersenCommitter provides the ability to create Pedersen Commitments
 /// of the form:
 ///     commit(v, r) = rG + vH
@@ -26,7 +24,7 @@ impl Default for PedersenCommitter {
         #[allow(non_snake_case)]
         let G = G1Projective::generator();
         #[allow(non_snake_case)]
-        let H = G1Projective::hash_to_curve(&G.to_compressed(), DOMAIN, &[]);
+        let H = crate::hash_to_curve(G);
         Self { G, H }
     }
 }
