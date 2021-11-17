@@ -32,6 +32,7 @@ impl TrueInput {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct DecoyInput {
     pub public_key: G1Affine,
     pub commitment: G1Affine,
@@ -90,45 +91,7 @@ impl RingCT {
 
         let pi = rng.next_u32() as usize % ring_size;
 
-        let public_keys: Vec<Vec<G1Affine>> = {
-            let mut keys = Vec::from_iter(
-                self.decoy_inputs
-                    .iter()
-                    .map(|decoys| Vec::from_iter(decoys.iter().map(DecoyInput::public_key))),
-            );
-
-            keys.insert(
-                pi,
-                Vec::from_iter(
-                    self.true_inputs
-                        .iter()
-                        .map(|input| input.public_key().to_affine()),
-                ),
-            );
-
-            keys
-        };
-
         let committer = PedersenCommitter::default();
-        let commitments: Vec<Vec<G1Affine>> = {
-            let mut commitments = Vec::from_iter(
-                self.decoy_inputs
-                    .iter()
-                    .map(|decoys| Vec::from_iter(decoys.iter().map(DecoyInput::commitment))),
-            );
-
-            commitments.insert(
-                pi,
-                Vec::from_iter(
-                    self.true_inputs
-                        .iter()
-                        .map(|input| committer.from_reveal(input.revealed_commitment).to_affine()),
-                ),
-            );
-
-            commitments
-        };
-
         let revealed_pseudo_commitments =
             Vec::from_iter(self.true_inputs.iter().map(|input| RevealedCommitment {
                 value: input.revealed_commitment.value,
@@ -186,18 +149,12 @@ impl RingCT {
         // We create a ring signature for each input
         let mut mlsags = Vec::new();
         for (m, input) in self.true_inputs.iter().enumerate() {
-            let ring = Vec::from_iter((0..ring_size).into_iter().map(|n| {
-                (
-                    public_keys[n][m],
-                    (commitments[n][m] - pseudo_commitments[m]).to_affine(),
-                )
-            }));
             mlsags.push(ringct_mlsag_sign(
                 msg,
                 input,
+                self.decoy_inputs.iter().map(|decoy| decoy[m]).collect(),
                 revealed_pseudo_commitments[m],
                 pi,
-                ring,
                 &mut rng,
             ));
         }
@@ -209,14 +166,36 @@ impl RingCT {
 fn ringct_mlsag_sign(
     msg: &[u8],
     input: &TrueInput,
+    decoy_inputs: Vec<DecoyInput>,
     revealed_pseudo_commitment: RevealedCommitment,
     pi: usize, // TODO: try randomly generating pi inside this function
-    ring: Vec<(G1Affine, G1Affine)>,
     mut rng: impl RngCore,
 ) -> MlsagSignature {
     let committer = PedersenCommitter::default();
     #[allow(non_snake_case)]
     let G1 = G1Projective::generator(); // TAI: should we use committer.G instead?
+
+    let public_keys: Vec<G1Affine> = {
+        let mut keys = Vec::from_iter(decoy_inputs.iter().map(DecoyInput::public_key));
+        keys.insert(pi, input.public_key().to_affine());
+        keys
+    };
+
+    let commitments: Vec<G1Affine> = {
+        let mut commitments = Vec::from_iter(decoy_inputs.iter().map(DecoyInput::commitment));
+        commitments.insert(
+            pi,
+            committer.from_reveal(input.revealed_commitment).to_affine(),
+        );
+        commitments
+    };
+
+    let pseudo_commitment = committer.from_reveal(revealed_pseudo_commitment);
+    let ring: Vec<(G1Affine, G1Affine)> = public_keys
+        .into_iter()
+        .zip(commitments)
+        .map(|(pk, commitment)| (pk, (commitment - pseudo_commitment).to_affine()))
+        .collect();
 
     // for ring m, the true secret keys in this ring are ...
     let secret_keys = (
