@@ -84,17 +84,24 @@ pub struct MlsagSignature {
 
 impl RingCT {
     pub fn sign(&self, msg: &[u8], mut rng: impl RngCore) -> RingCTSignature {
-        let ring_size = self.decoy_inputs.len() + 1; // +1 for true_inputs
         for decoy_inputs in self.decoy_inputs.iter() {
             assert_eq!(decoy_inputs.len(), self.true_inputs.len());
         }
+        // We create a ring signature for each input
+        let mut mlsags = Vec::new();
+        let mut revealed_pseudo_commitments = Vec::new();
+        for (m, input) in self.true_inputs.iter().enumerate() {
+            let (mlsag, revealed_pseudo_commitment) = ringct_mlsag_sign(
+                msg,
+                input,
+                self.decoy_inputs.iter().map(|decoy| decoy[m]).collect(),
+                &mut rng,
+            );
+            mlsags.push(mlsag);
+            revealed_pseudo_commitments.push(revealed_pseudo_commitment)
+        }
 
         let committer = PedersenCommitter::default();
-        let revealed_pseudo_commitments =
-            Vec::from_iter(self.true_inputs.iter().map(|input| RevealedCommitment {
-                value: input.revealed_commitment.value,
-                blinding: Scalar::random(&mut rng),
-            }));
 
         let revealed_output_commitments = {
             let mut commitments = Vec::from_iter(
@@ -142,20 +149,6 @@ impl RingCT {
                 .sum()
         );
 
-        // At this point we've prepared our data for the ring signature, all that's left to do is perform the MLSAG signature
-
-        // We create a ring signature for each input
-        let mut mlsags = Vec::new();
-        for (m, input) in self.true_inputs.iter().enumerate() {
-            mlsags.push(ringct_mlsag_sign(
-                msg,
-                input,
-                self.decoy_inputs.iter().map(|decoy| decoy[m]).collect(),
-                revealed_pseudo_commitments[m],
-                &mut rng,
-            ));
-        }
-
         RingCTSignature { mlsags }
     }
 }
@@ -164,9 +157,8 @@ fn ringct_mlsag_sign(
     msg: &[u8],
     input: &TrueInput,
     decoy_inputs: Vec<DecoyInput>,
-    revealed_pseudo_commitment: RevealedCommitment,
     mut rng: impl RngCore,
-) -> MlsagSignature {
+) -> (MlsagSignature, RevealedCommitment) {
     let committer = PedersenCommitter::default();
     #[allow(non_snake_case)]
     let G1 = G1Projective::generator(); // TAI: should we use committer.G instead?
@@ -178,6 +170,11 @@ fn ringct_mlsag_sign(
         let mut keys = Vec::from_iter(decoy_inputs.iter().map(DecoyInput::public_key));
         keys.insert(pi, input.public_key().to_affine());
         keys
+    };
+
+    let revealed_pseudo_commitment = RevealedCommitment {
+        value: input.revealed_commitment.value, // TODO: this should be a function on TrueInput
+        blinding: Scalar::random(&mut rng),
     };
 
     let commitments: Vec<G1Affine> = {
@@ -277,12 +274,14 @@ fn ringct_mlsag_sign(
         hash_to_curve(ring[pi].1.into()) * (alpha.1 - c[pi] * secret_keys.1) + key_image * c[pi]
     );
 
-    MlsagSignature {
+    let sig = MlsagSignature {
         c0: c[0],
         r,
         key_image: key_image.to_affine(),
         ring,
-    }
+    };
+
+    (sig, revealed_pseudo_commitment)
 }
 
 pub fn verify(msg: &[u8], sig: RingCTSignature) -> bool {
