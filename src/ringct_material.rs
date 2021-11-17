@@ -70,9 +70,7 @@ pub struct RingCT {
 
 #[derive(Debug)]
 pub struct RingCTSignature {
-    c0: Vec<Scalar>,
-    r: Vec<Vec<(Scalar, Scalar)>>,
-    key_images: Vec<G1Affine>,
+    mlsags: Vec<MlsagSignature>,
 }
 
 #[derive(Debug)]
@@ -84,11 +82,7 @@ pub struct MlsagSignature {
 }
 
 impl RingCT {
-    pub fn sign(
-        &self,
-        msg: &[u8],
-        mut rng: impl RngCore,
-    ) -> (RingCTSignature, Vec<Vec<(G1Affine, G1Affine)>>) {
+    pub fn sign(&self, msg: &[u8], mut rng: impl RngCore) -> RingCTSignature {
         let ring_size = self.decoy_inputs.len() + 1; // +1 for true_inputs
         for decoy_inputs in self.decoy_inputs.iter() {
             assert_eq!(decoy_inputs.len(), self.true_inputs.len());
@@ -190,10 +184,7 @@ impl RingCT {
         // At this point we've prepared our data for the ring signature, all that's left to do is perform the MLSAG signature
 
         // We create a ring signature for each input
-        let mut c0s = Vec::new();
-        let mut rs = Vec::new();
-        let mut images = Vec::new();
-        let mut rings: Vec<Vec<(G1Affine, G1Affine)>> = Vec::new();
+        let mut mlsags = Vec::new();
         for (m, input) in self.true_inputs.iter().enumerate() {
             let ring = Vec::from_iter((0..ring_size).into_iter().map(|n| {
                 (
@@ -201,29 +192,17 @@ impl RingCT {
                     (commitments[n][m] - pseudo_commitments[m]).to_affine(),
                 )
             }));
-            let mlsag_sig = ringct_mlsag_sign(
+            mlsags.push(ringct_mlsag_sign(
                 msg,
                 input,
                 revealed_pseudo_commitments[m],
                 pi,
                 ring,
                 &mut rng,
-            );
-            c0s.push(mlsag_sig.c0);
-            rs.push(mlsag_sig.r);
-            images.push(mlsag_sig.key_image);
-            rings.push(mlsag_sig.ring);
+            ));
         }
 
-        let sig = RingCTSignature {
-            c0: c0s,
-            r: rs,
-            key_images: images,
-        };
-
-        println!("pi: {}", pi);
-
-        (sig, rings)
+        RingCTSignature { mlsags }
     }
 }
 
@@ -328,38 +307,34 @@ fn ringct_mlsag_sign(
     }
 }
 
-pub fn verify(msg: &[u8], sig: RingCTSignature, rings: Vec<Vec<(G1Affine, G1Affine)>>) -> bool {
+pub fn verify(msg: &[u8], sig: RingCTSignature) -> bool {
     #[allow(non_snake_case)]
     let G1 = G1Projective::generator();
 
     // Verify key images are in G
-    for key_image in sig.key_images.iter() {
-        if !bool::from(key_image.is_on_curve()) {
+    for mlsag in sig.mlsags.iter() {
+        if !bool::from(mlsag.key_image.is_on_curve()) {
+            // TODO: I don't think this is enough, we need to check that key_image is in the group as well
             println!("Key images not on curve");
             return false;
         }
     }
 
-    if sig.key_images.len() != rings.len() {
-        println!("# of ring inputs does not match # of key_images");
-        return false;
-    }
+    for (m, mlsag) in sig.mlsags.iter().enumerate() {
+        let mut cprime = Vec::from_iter((0..mlsag.ring.len()).map(|_| Scalar::zero()));
+        cprime[0] = mlsag.c0;
 
-    for (m, ring) in rings.iter().enumerate() {
-        let mut cprime = Vec::from_iter(iter::repeat(Scalar::zero()).take(ring.len()));
-        cprime[0] = sig.c0[m];
-
-        for (n, keys) in ring.iter().enumerate() {
-            cprime[(n + 1) % ring.len()] = c_hash(
+        for (n, keys) in mlsag.ring.iter().enumerate() {
+            cprime[(n + 1) % mlsag.ring.len()] = c_hash(
                 msg,
-                G1 * sig.r[m][n].0 + keys.0 * cprime[n],
-                G1 * sig.r[m][n].1 + keys.1 * cprime[n],
-                hash_to_curve(keys.0.into()) * sig.r[m][n].0 + sig.key_images[m] * cprime[n],
+                G1 * mlsag.r[n].0 + keys.0 * cprime[n],
+                G1 * mlsag.r[n].1 + keys.1 * cprime[n],
+                hash_to_curve(keys.0.into()) * mlsag.r[n].0 + mlsag.key_image * cprime[n],
             );
         }
 
         println!("c': {:#?}", cprime);
-        if sig.c0[m] != cprime[0] {
+        if mlsag.c0 != cprime[0] {
             println!("Failed c check on ring {:?}", m);
             return false;
         }
@@ -428,11 +403,11 @@ mod tests {
 
         let msg = b"hello";
 
-        let (sig, rings) = ring_ct.sign(msg, rng);
+        let sig = ring_ct.sign(msg, rng);
 
         // println!("{:#?}", sig);
         // println!("{:#?}", rings);
 
-        assert!(verify(msg, sig, rings));
+        assert!(verify(msg, sig));
     }
 }
