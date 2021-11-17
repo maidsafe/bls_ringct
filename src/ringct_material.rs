@@ -75,6 +75,14 @@ pub struct RingCTSignature {
     key_images: Vec<G1Affine>,
 }
 
+#[derive(Debug)]
+pub struct MlsagSignature {
+    c0: Scalar,
+    r: Vec<(Scalar, Scalar)>,
+    key_image: G1Affine,
+    ring: Vec<(G1Affine, G1Affine)>,
+}
+
 impl RingCT {
     pub fn sign(
         &self,
@@ -179,34 +187,32 @@ impl RingCT {
                 .sum()
         );
 
-        let rings: Vec<Vec<(G1Affine, G1Affine)>> =
-            Vec::from_iter((0..self.true_inputs.len()).into_iter().map(|m| {
-                Vec::from_iter((0..ring_size).into_iter().map(|n| {
-                    (
-                        public_keys[n][m],
-                        (commitments[n][m] - pseudo_commitments[m]).to_affine(),
-                    )
-                }))
-            }));
-
         // At this point we've prepared our data for the ring signature, all that's left to do is perform the MLSAG signature
 
         // We create a ring signature for each input
         let mut c0s = Vec::new();
         let mut rs = Vec::new();
         let mut images = Vec::new();
+        let mut rings: Vec<Vec<(G1Affine, G1Affine)>> = Vec::new();
         for (m, input) in self.true_inputs.iter().enumerate() {
-            let (c0, r, key_image) = ringct_mlsag_sign(
+            let ring = Vec::from_iter((0..ring_size).into_iter().map(|n| {
+                (
+                    public_keys[n][m],
+                    (commitments[n][m] - pseudo_commitments[m]).to_affine(),
+                )
+            }));
+            let mlsag_sig = ringct_mlsag_sign(
                 msg,
                 input,
                 revealed_pseudo_commitments[m],
                 pi,
-                &rings[m],
+                ring,
                 &mut rng,
             );
-            c0s.push(c0);
-            rs.push(r);
-            images.push(key_image.to_affine());
+            c0s.push(mlsag_sig.c0);
+            rs.push(mlsag_sig.r);
+            images.push(mlsag_sig.key_image);
+            rings.push(mlsag_sig.ring);
         }
 
         let sig = RingCTSignature {
@@ -226,9 +232,9 @@ fn ringct_mlsag_sign(
     input: &TrueInput,
     revealed_pseudo_commitment: RevealedCommitment,
     pi: usize, // TODO: try randomly generating pi inside this function
-    ring: &[(G1Affine, G1Affine)],
+    ring: Vec<(G1Affine, G1Affine)>,
     mut rng: impl RngCore,
-) -> (Scalar, Vec<(Scalar, Scalar)>, G1Projective) {
+) -> MlsagSignature {
     let committer = PedersenCommitter::default();
     #[allow(non_snake_case)]
     let G1 = G1Projective::generator(); // TAI: should we use committer.G instead?
@@ -314,7 +320,12 @@ fn ringct_mlsag_sign(
         hash_to_curve(ring[pi].1.into()) * (alpha.1 - c[pi] * secret_keys.1) + key_image * c[pi]
     );
 
-    (c[0], r, key_image)
+    MlsagSignature {
+        c0: c[0],
+        r,
+        key_image: key_image.to_affine(),
+        ring,
+    }
 }
 
 pub fn verify(msg: &[u8], sig: RingCTSignature, rings: Vec<Vec<(G1Affine, G1Affine)>>) -> bool {
@@ -327,6 +338,11 @@ pub fn verify(msg: &[u8], sig: RingCTSignature, rings: Vec<Vec<(G1Affine, G1Affi
             println!("Key images not on curve");
             return false;
         }
+    }
+
+    if sig.key_images.len() != rings.len() {
+        println!("# of ring inputs does not match # of key_images");
+        return false;
     }
 
     for (m, ring) in rings.iter().enumerate() {
