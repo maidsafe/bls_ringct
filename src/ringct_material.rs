@@ -71,9 +71,13 @@ impl Output {
     }
 }
 
+pub struct MlsagMaterial {
+    true_input: TrueInput,
+    decoy_inputs: Vec<DecoyInput>,
+}
+
 pub struct RingCT {
-    true_inputs: Vec<TrueInput>,
-    decoy_inputs: Vec<Vec<DecoyInput>>,
+    inputs: Vec<MlsagMaterial>,
     outputs: Vec<Output>,
 }
 
@@ -92,19 +96,12 @@ pub struct MlsagSignature {
 
 impl RingCT {
     pub fn sign(&self, msg: &[u8], mut rng: impl RngCore) -> RingCTSignature {
-        for decoy_inputs in self.decoy_inputs.iter() {
-            assert_eq!(decoy_inputs.len(), self.true_inputs.len());
-        }
         // We create a ring signature for each input
         let mut mlsags = Vec::new();
         let mut revealed_pseudo_commitments = Vec::new();
-        for (m, input) in self.true_inputs.iter().enumerate() {
-            let (mlsag, revealed_pseudo_commitment) = ringct_mlsag_sign(
-                msg,
-                input,
-                self.decoy_inputs.iter().map(|decoy| decoy[m]).collect(),
-                &mut rng,
-            );
+        for (m, mlsag_material) in self.inputs.iter().enumerate() {
+            let (mlsag, revealed_pseudo_commitment) =
+                ringct_mlsag_sign(msg, mlsag_material, &mut rng);
             mlsags.push(mlsag);
             revealed_pseudo_commitments.push(revealed_pseudo_commitment)
         }
@@ -163,8 +160,7 @@ impl RingCT {
 
 fn ringct_mlsag_sign(
     msg: &[u8],
-    input: &TrueInput,
-    decoy_inputs: Vec<DecoyInput>,
+    material: &MlsagMaterial,
     mut rng: impl RngCore,
 ) -> (MlsagSignature, RevealedCommitment) {
     let committer = PedersenCommitter::default();
@@ -172,21 +168,24 @@ fn ringct_mlsag_sign(
     let G1 = G1Projective::generator(); // TAI: should we use committer.G instead?
 
     // The position of the true input will be randomply placed amongst the decoys
-    let pi = rng.next_u32() as usize % (decoy_inputs.len() + 1);
+    let pi = rng.next_u32() as usize % (material.decoy_inputs.len() + 1);
 
     let public_keys: Vec<G1Affine> = {
-        let mut keys = Vec::from_iter(decoy_inputs.iter().map(DecoyInput::public_key));
-        keys.insert(pi, input.public_key().to_affine());
+        let mut keys = Vec::from_iter(material.decoy_inputs.iter().map(DecoyInput::public_key));
+        keys.insert(pi, material.true_input.public_key().to_affine());
         keys
     };
 
-    let revealed_pseudo_commitment = input.random_pseudo_commitment(&mut rng);
+    let revealed_pseudo_commitment = material.true_input.random_pseudo_commitment(&mut rng);
 
     let commitments: Vec<G1Affine> = {
-        let mut commitments = Vec::from_iter(decoy_inputs.iter().map(DecoyInput::commitment));
+        let mut commitments =
+            Vec::from_iter(material.decoy_inputs.iter().map(DecoyInput::commitment));
         commitments.insert(
             pi,
-            committer.from_reveal(input.revealed_commitment).to_affine(),
+            committer
+                .from_reveal(material.true_input.revealed_commitment)
+                .to_affine(),
         );
         commitments
     };
@@ -200,11 +199,11 @@ fn ringct_mlsag_sign(
 
     // for ring m, the true secret keys in this ring are ...
     let secret_keys = (
-        input.secret_key,
-        input.revealed_commitment.blinding - revealed_pseudo_commitment.blinding,
+        material.true_input.secret_key,
+        material.true_input.revealed_commitment.blinding - revealed_pseudo_commitment.blinding,
     );
     assert_eq!(committer.commit(0.into(), secret_keys.1), ring[pi].1.into());
-    let key_image = input.key_image();
+    let key_image = material.true_input.key_image();
     let alpha = (Scalar::random(&mut rng), Scalar::random(&mut rng));
     let mut r: Vec<(Scalar, Scalar)> = (0..ring.len())
         .map(|_| (Scalar::random(&mut rng), Scalar::random(&mut rng)))
@@ -366,17 +365,19 @@ mod tests {
         let mut rng = OsRng::default();
 
         let ring_ct = RingCT {
-            true_inputs: vec![TrueInput {
-                secret_key: Scalar::random(&mut rng),
-                revealed_commitment: RevealedCommitment {
-                    value: 3.into(),
-                    blinding: 5.into(),
+            inputs: vec![MlsagMaterial {
+                true_input: TrueInput {
+                    secret_key: Scalar::random(&mut rng),
+                    revealed_commitment: RevealedCommitment {
+                        value: 3.into(),
+                        blinding: 5.into(),
+                    },
                 },
+                decoy_inputs: vec![DecoyInput {
+                    public_key: G1Projective::random(&mut rng).to_affine(),
+                    commitment: G1Projective::random(&mut rng).to_affine(),
+                }],
             }],
-            decoy_inputs: vec![vec![DecoyInput {
-                public_key: G1Projective::random(&mut rng).to_affine(),
-                commitment: G1Projective::random(&mut rng).to_affine(),
-            }]],
             outputs: vec![Output {
                 public_key: G1Projective::random(&mut rng).to_affine(),
                 amount: 3.into(),
