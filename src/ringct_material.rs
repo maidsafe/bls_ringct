@@ -71,11 +71,6 @@ impl Output {
     }
 }
 
-pub struct MlsagMaterial {
-    true_input: TrueInput,
-    decoy_inputs: Vec<DecoyInput>,
-}
-
 pub struct RingCT {
     inputs: Vec<MlsagMaterial>,
     outputs: Vec<Output>,
@@ -99,15 +94,13 @@ impl RingCT {
         // We create a ring signature for each input
         let mut mlsags = Vec::new();
         let mut revealed_pseudo_commitments = Vec::new();
-        for (m, mlsag_material) in self.inputs.iter().enumerate() {
-            let (mlsag, revealed_pseudo_commitment) =
-                ringct_mlsag_sign(msg, mlsag_material, &mut rng);
+        for mlsag_material in self.inputs.iter() {
+            let (mlsag, revealed_pseudo_commitment) = mlsag_material.sign(msg, &mut rng);
             mlsags.push(mlsag);
             revealed_pseudo_commitments.push(revealed_pseudo_commitment)
         }
 
         let committer = PedersenCommitter::default();
-
         let revealed_output_commitments = {
             let mut commitments = Vec::from_iter(
                 self.outputs
@@ -158,134 +151,141 @@ impl RingCT {
     }
 }
 
-fn ringct_mlsag_sign(
-    msg: &[u8],
-    material: &MlsagMaterial,
-    mut rng: impl RngCore,
-) -> (MlsagSignature, RevealedCommitment) {
-    let committer = PedersenCommitter::default();
-    #[allow(non_snake_case)]
-    let G1 = G1Projective::generator(); // TAI: should we use committer.G instead?
+pub struct MlsagMaterial {
+    true_input: TrueInput,
+    decoy_inputs: Vec<DecoyInput>,
+}
 
-    // The position of the true input will be randomply placed amongst the decoys
-    let pi = rng.next_u32() as usize % (material.decoy_inputs.len() + 1);
+impl MlsagMaterial {
+    fn sign(&self, msg: &[u8], mut rng: impl RngCore) -> (MlsagSignature, RevealedCommitment) {
+        let committer = PedersenCommitter::default();
+        #[allow(non_snake_case)]
+        let G1 = G1Projective::generator(); // TAI: should we use committer.G instead?
 
-    let public_keys: Vec<G1Affine> = {
-        let mut keys = Vec::from_iter(material.decoy_inputs.iter().map(DecoyInput::public_key));
-        keys.insert(pi, material.true_input.public_key().to_affine());
-        keys
-    };
+        // The position of the true input will be randomply placed amongst the decoys
+        let pi = rng.next_u32() as usize % (self.decoy_inputs.len() + 1);
 
-    let revealed_pseudo_commitment = material.true_input.random_pseudo_commitment(&mut rng);
+        let public_keys: Vec<G1Affine> = {
+            let mut keys = Vec::from_iter(self.decoy_inputs.iter().map(DecoyInput::public_key));
+            keys.insert(pi, self.true_input.public_key().to_affine());
+            keys
+        };
 
-    let commitments: Vec<G1Affine> = {
-        let mut commitments =
-            Vec::from_iter(material.decoy_inputs.iter().map(DecoyInput::commitment));
-        commitments.insert(
-            pi,
-            committer
-                .from_reveal(material.true_input.revealed_commitment)
-                .to_affine(),
+        let revealed_pseudo_commitment = self.true_input.random_pseudo_commitment(&mut rng);
+
+        let commitments: Vec<G1Affine> = {
+            let mut commitments =
+                Vec::from_iter(self.decoy_inputs.iter().map(DecoyInput::commitment));
+            commitments.insert(
+                pi,
+                committer
+                    .from_reveal(self.true_input.revealed_commitment)
+                    .to_affine(),
+            );
+            commitments
+        };
+
+        let pseudo_commitment = committer.from_reveal(revealed_pseudo_commitment);
+        let ring: Vec<(G1Affine, G1Affine)> = public_keys
+            .into_iter()
+            .zip(commitments)
+            .map(|(pk, commitment)| (pk, (commitment - pseudo_commitment).to_affine()))
+            .collect();
+
+        // for ring m, the true secret keys in this ring are ...
+        let secret_keys = (
+            self.true_input.secret_key,
+            self.true_input.revealed_commitment.blinding - revealed_pseudo_commitment.blinding,
         );
-        commitments
-    };
+        assert_eq!(committer.commit(0.into(), secret_keys.1), ring[pi].1.into());
+        let key_image = self.true_input.key_image();
+        let alpha = (Scalar::random(&mut rng), Scalar::random(&mut rng));
+        let mut r: Vec<(Scalar, Scalar)> = (0..ring.len())
+            .map(|_| (Scalar::random(&mut rng), Scalar::random(&mut rng)))
+            .collect();
+        let mut c: Vec<Scalar> = (0..ring.len()).map(|_| Scalar::zero()).collect();
 
-    let pseudo_commitment = committer.from_reveal(revealed_pseudo_commitment);
-    let ring: Vec<(G1Affine, G1Affine)> = public_keys
-        .into_iter()
-        .zip(commitments)
-        .map(|(pk, commitment)| (pk, (commitment - pseudo_commitment).to_affine()))
-        .collect();
-
-    // for ring m, the true secret keys in this ring are ...
-    let secret_keys = (
-        material.true_input.secret_key,
-        material.true_input.revealed_commitment.blinding - revealed_pseudo_commitment.blinding,
-    );
-    assert_eq!(committer.commit(0.into(), secret_keys.1), ring[pi].1.into());
-    let key_image = material.true_input.key_image();
-    let alpha = (Scalar::random(&mut rng), Scalar::random(&mut rng));
-    let mut r: Vec<(Scalar, Scalar)> = (0..ring.len())
-        .map(|_| (Scalar::random(&mut rng), Scalar::random(&mut rng)))
-        .collect();
-    let mut c: Vec<Scalar> = (0..ring.len()).map(|_| Scalar::zero()).collect();
-
-    c[(pi + 1) % ring.len()] = c_hash(
-        msg,
-        G1 * alpha.0,
-        G1 * alpha.1,
-        hash_to_curve(ring[pi].0.into()) * alpha.0,
-    );
-
-    for offset in 1..ring.len() {
-        let n = (pi + offset) % ring.len();
-        c[(n + 1) % ring.len()] = c_hash(
+        c[(pi + 1) % ring.len()] = c_hash(
             msg,
-            G1 * r[n].0 + ring[n].0 * c[n],
-            G1 * r[n].1 + ring[n].1 * c[n],
-            hash_to_curve(ring[n].0.into()) * r[n].0 + key_image * c[n],
+            G1 * alpha.0,
+            G1 * alpha.1,
+            hash_to_curve(ring[pi].0.into()) * alpha.0,
         );
+
+        for offset in 1..ring.len() {
+            let n = (pi + offset) % ring.len();
+            c[(n + 1) % ring.len()] = c_hash(
+                msg,
+                G1 * r[n].0 + ring[n].0 * c[n],
+                G1 * r[n].1 + ring[n].1 * c[n],
+                hash_to_curve(ring[n].0.into()) * r[n].0 + key_image * c[n],
+            );
+        }
+
+        r[pi] = (
+            alpha.0 - c[pi] * secret_keys.0,
+            alpha.1 - c[pi] * secret_keys.1,
+        );
+
+        // For our sanity, check a few identities
+        assert_eq!(G1 * secret_keys.0, ring[pi].0.into());
+        assert_eq!(G1 * secret_keys.1, ring[pi].1.into());
+        assert_eq!(
+            G1 * (alpha.0 - c[pi] * secret_keys.0),
+            G1 * alpha.0 - G1 * (c[pi] * secret_keys.0)
+        );
+        assert_eq!(
+            G1 * (alpha.1 - c[pi] * secret_keys.1),
+            G1 * alpha.1 - G1 * (c[pi] * secret_keys.1)
+        );
+        assert_eq!(
+            G1 * (alpha.0 - c[pi] * secret_keys.0) + ring[pi].0 * c[pi],
+            G1 * alpha.0
+        );
+        assert_eq!(
+            G1 * (alpha.1 - c[pi] * secret_keys.1) + ring[pi].1 * c[pi],
+            G1 * alpha.1
+        );
+        assert_eq!(
+            G1 * r[pi].0 + ring[pi].0 * c[pi],
+            G1 * (alpha.0 - c[pi] * secret_keys.0) + ring[pi].0 * c[pi]
+        );
+        assert_eq!(
+            G1 * r[pi].1 + ring[pi].1 * c[pi],
+            G1 * (alpha.1 - c[pi] * secret_keys.1) + ring[pi].1 * c[pi]
+        );
+        assert_eq!(
+            hash_to_curve(ring[pi].0.into()) * r[pi].0 + key_image * c[pi],
+            hash_to_curve(ring[pi].0.into()) * (alpha.0 - c[pi] * secret_keys.0)
+                + key_image * c[pi]
+        );
+        assert_eq!(
+            hash_to_curve(ring[pi].1.into()) * r[pi].1 + key_image * c[pi],
+            hash_to_curve(ring[pi].1.into()) * (alpha.1 - c[pi] * secret_keys.1)
+                + key_image * c[pi]
+        );
+
+        assert_eq!(hash_to_curve(ring[pi].0.into()) * secret_keys.0, key_image);
+        assert_eq!(
+            hash_to_curve(ring[pi].0.into()) * r[pi].0 + key_image * c[pi],
+            hash_to_curve(ring[pi].0.into()) * (alpha.0 - c[pi] * secret_keys.0)
+                + key_image * c[pi]
+        );
+        assert_eq!(
+            hash_to_curve(ring[pi].1.into()) * r[pi].1 + key_image * c[pi],
+            hash_to_curve(ring[pi].1.into()) * (alpha.1 - c[pi] * secret_keys.1)
+                + key_image * c[pi]
+        );
+
+        let sig = MlsagSignature {
+            c0: c[0],
+            r,
+            key_image: key_image.to_affine(),
+            ring,
+        };
+
+        (sig, revealed_pseudo_commitment)
     }
-
-    r[pi] = (
-        alpha.0 - c[pi] * secret_keys.0,
-        alpha.1 - c[pi] * secret_keys.1,
-    );
-
-    // For our sanity, check a few identities
-    assert_eq!(G1 * secret_keys.0, ring[pi].0.into());
-    assert_eq!(G1 * secret_keys.1, ring[pi].1.into());
-    assert_eq!(
-        G1 * (alpha.0 - c[pi] * secret_keys.0),
-        G1 * alpha.0 - G1 * (c[pi] * secret_keys.0)
-    );
-    assert_eq!(
-        G1 * (alpha.1 - c[pi] * secret_keys.1),
-        G1 * alpha.1 - G1 * (c[pi] * secret_keys.1)
-    );
-    assert_eq!(
-        G1 * (alpha.0 - c[pi] * secret_keys.0) + ring[pi].0 * c[pi],
-        G1 * alpha.0
-    );
-    assert_eq!(
-        G1 * (alpha.1 - c[pi] * secret_keys.1) + ring[pi].1 * c[pi],
-        G1 * alpha.1
-    );
-    assert_eq!(
-        G1 * r[pi].0 + ring[pi].0 * c[pi],
-        G1 * (alpha.0 - c[pi] * secret_keys.0) + ring[pi].0 * c[pi]
-    );
-    assert_eq!(
-        G1 * r[pi].1 + ring[pi].1 * c[pi],
-        G1 * (alpha.1 - c[pi] * secret_keys.1) + ring[pi].1 * c[pi]
-    );
-    assert_eq!(
-        hash_to_curve(ring[pi].0.into()) * r[pi].0 + key_image * c[pi],
-        hash_to_curve(ring[pi].0.into()) * (alpha.0 - c[pi] * secret_keys.0) + key_image * c[pi]
-    );
-    assert_eq!(
-        hash_to_curve(ring[pi].1.into()) * r[pi].1 + key_image * c[pi],
-        hash_to_curve(ring[pi].1.into()) * (alpha.1 - c[pi] * secret_keys.1) + key_image * c[pi]
-    );
-
-    assert_eq!(hash_to_curve(ring[pi].0.into()) * secret_keys.0, key_image);
-    assert_eq!(
-        hash_to_curve(ring[pi].0.into()) * r[pi].0 + key_image * c[pi],
-        hash_to_curve(ring[pi].0.into()) * (alpha.0 - c[pi] * secret_keys.0) + key_image * c[pi]
-    );
-    assert_eq!(
-        hash_to_curve(ring[pi].1.into()) * r[pi].1 + key_image * c[pi],
-        hash_to_curve(ring[pi].1.into()) * (alpha.1 - c[pi] * secret_keys.1) + key_image * c[pi]
-    );
-
-    let sig = MlsagSignature {
-        c0: c[0],
-        r,
-        key_image: key_image.to_affine(),
-        ring,
-    };
-
-    (sig, revealed_pseudo_commitment)
 }
 
 pub fn verify(msg: &[u8], sig: RingCTSignature) -> bool {
