@@ -1,4 +1,5 @@
 use blstrs::{group::Group, G1Projective, Scalar};
+use rand_core::RngCore;
 
 const DOMAIN: &[u8; 27] = b"blst-ringct-pedersen-commit";
 
@@ -46,6 +47,14 @@ pub struct RevealedCommitment {
 }
 
 impl RevealedCommitment {
+    /// Construct a revealed commitment from a value, generating a blinding randomly
+    pub fn from_value(value: Scalar, mut rng: impl RngCore) -> Self {
+        Self {
+            value,
+            blinding: Scalar::random(&mut rng),
+        }
+    }
+
     pub fn value(&self) -> Scalar {
         self.value
     }

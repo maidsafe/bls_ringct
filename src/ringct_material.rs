@@ -33,10 +33,7 @@ impl TrueInput {
 
     /// Generate a pseudo-commitment to the input amount
     pub fn random_pseudo_commitment(&self, mut rng: impl RngCore) -> RevealedCommitment {
-        RevealedCommitment {
-            value: self.revealed_commitment.value,
-            blinding: Scalar::random(&mut rng),
-        }
+        RevealedCommitment::from_value(self.revealed_commitment.value, rng)
     }
 }
 
@@ -107,10 +104,7 @@ impl RingCT {
                     .iter()
                     .take(self.outputs.len() - 1)
                     .map(Output::amount)
-                    .map(|value| RevealedCommitment {
-                        value,
-                        blinding: Scalar::random(&mut rng),
-                    }),
+                    .map(|value| RevealedCommitment::from_value(value, &mut rng)),
             );
 
             let output_blinding_correction = revealed_pseudo_commitments
