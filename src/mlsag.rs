@@ -2,10 +2,11 @@ use blstrs::{
     group::{ff::Field, Curve, Group},
     G1Affine, G1Projective, Scalar,
 };
+use bulletproofs::PedersenGens;
 use rand_core::RngCore;
 use tiny_keccak::{Hasher, Sha3};
 
-use crate::{PedersenCommitter, RevealedCommitment};
+use crate::{Error, Result, RevealedCommitment};
 
 pub struct TrueInput {
     pub secret_key: Scalar,
@@ -15,6 +16,10 @@ pub struct TrueInput {
 impl TrueInput {
     pub fn public_key(&self) -> G1Projective {
         G1Projective::generator() * self.secret_key
+    }
+
+    pub fn revealed_commitment(&self) -> &RevealedCommitment {
+        &self.revealed_commitment
     }
 
     /// Computes the Key Image for this inputs keypair
@@ -51,29 +56,45 @@ pub struct MlsagMaterial {
 }
 
 impl MlsagMaterial {
-    pub fn sign(&self, msg: &[u8], mut rng: impl RngCore) -> (MlsagSignature, RevealedCommitment) {
-        let pedersen = PedersenCommitter::default();
+    pub fn count_inputs(&self) -> usize {
+        self.decoy_inputs.len() + 1 // + 1 for the true_input
+    }
+
+    pub fn public_keys(&self, pi: usize) -> Vec<G1Affine> {
+        let mut keys = Vec::from_iter(self.decoy_inputs.iter().map(DecoyInput::public_key));
+        keys.insert(pi, self.true_input.public_key().to_affine());
+        keys
+    }
+
+    pub fn commitments(&self, pi: usize, pc_gens: &PedersenGens) -> Vec<G1Affine> {
+        let mut cs = Vec::from_iter(self.decoy_inputs.iter().map(DecoyInput::commitment));
+        let true_commitment = self.true_input.revealed_commitment.commit(&pc_gens);
+        cs.insert(pi, true_commitment.to_affine());
+        cs
+    }
+
+    pub fn sign(
+        &self,
+        msg: &[u8],
+        pc_gens: &PedersenGens,
+        mut rng: impl RngCore,
+    ) -> (MlsagSignature, RevealedCommitment) {
         #[allow(non_snake_case)]
         let G1 = G1Projective::generator(); // TAI: should we use pedersen.G instead?
 
         // The position of the true input will be randomply placed amongst the decoys
         let pi = rng.next_u32() as usize % (self.decoy_inputs.len() + 1);
 
-        let public_keys: Vec<G1Affine> = {
-            let mut keys = Vec::from_iter(self.decoy_inputs.iter().map(DecoyInput::public_key));
-            keys.insert(pi, self.true_input.public_key().to_affine());
-            keys
-        };
-
-        let commitments: Vec<G1Affine> = {
-            let mut cs = Vec::from_iter(self.decoy_inputs.iter().map(DecoyInput::commitment));
-            let true_commitment = pedersen.from_reveal(self.true_input.revealed_commitment);
-            cs.insert(pi, true_commitment.to_affine());
-            cs
-        };
+        let public_keys = self.public_keys(pi);
+        let commitments = self.commitments(pi, pc_gens);
 
         let revealed_pseudo_commitment = self.true_input.random_pseudo_commitment(&mut rng);
-        let pseudo_commitment = pedersen.from_reveal(revealed_pseudo_commitment);
+        let pseudo_commitment = revealed_pseudo_commitment.commit(&pc_gens);
+
+        // commitment = r G + a H -- a is the amount, r is the blinding factor
+        // pseudo_commitment = v G + a H
+        // commitment - pseudo_commitment = (r G + a H) - (v G + a H)
+        //                                = (r - v) G + 0 H = (r - v) G
 
         let ring: Vec<(G1Affine, G1Affine)> = public_keys
             .into_iter()
@@ -177,6 +198,7 @@ impl MlsagMaterial {
             r,
             key_image: key_image.to_affine(),
             ring,
+            pseudo_commitment: pseudo_commitment.to_affine(),
         };
 
         (sig, revealed_pseudo_commitment)
@@ -189,10 +211,32 @@ pub struct MlsagSignature {
     pub r: Vec<(Scalar, Scalar)>,
     pub key_image: G1Affine,
     pub ring: Vec<(G1Affine, G1Affine)>,
+    pub pseudo_commitment: G1Affine,
 }
 
 impl MlsagSignature {
-    pub fn verify(&self, msg: &[u8]) -> bool {
+    pub fn pseudo_commitment(&self) -> G1Affine {
+        self.pseudo_commitment
+    }
+
+    pub fn public_keys(&self) -> Vec<G1Affine> {
+        self.ring.iter().map(|(pk, _)| *pk).collect()
+    }
+
+    pub fn verify(&self, msg: &[u8], public_commitments: &[G1Affine]) -> Result<()> {
+        if self.ring.len() != public_commitments.len() {
+            return Err(Error::ExpectedAPublicCommitmentsForEachRingEntry);
+        }
+        // Check that hidden commitments in the ring where computed with: C - C'
+        for ((_, hidden_commitment), public_commitment) in self.ring.iter().zip(public_commitments)
+        {
+            if G1Projective::from(hidden_commitment)
+                != public_commitment - G1Projective::from(self.pseudo_commitment)
+            {
+                return Err(Error::InvalidHiddenCommitmentInRing);
+            }
+        }
+
         #[allow(non_snake_case)]
         let G1 = G1Projective::generator();
 
@@ -200,7 +244,7 @@ impl MlsagSignature {
         if !bool::from(self.key_image.is_on_curve()) {
             // TODO: I don't think this is enough, we need to check that key_image is in the group as well
             println!("Key images not on curve");
-            return false;
+            return Err(Error::KeyImageNotOnCurve);
         }
 
         let mut cprime = Vec::from_iter((0..self.ring.len()).map(|_| Scalar::zero()));
@@ -217,10 +261,9 @@ impl MlsagSignature {
 
         println!("c': {:#?}", cprime);
         if self.c0 != cprime[0] {
-            println!("Failed c check ");
-            false
+            Err(Error::InvalidRingSignature)
         } else {
-            true
+            Ok(())
         }
     }
 }
