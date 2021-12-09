@@ -68,7 +68,7 @@ impl MlsagMaterial {
 
     pub fn commitments(&self, pi: usize, pc_gens: &PedersenGens) -> Vec<G1Affine> {
         let mut cs = Vec::from_iter(self.decoy_inputs.iter().map(DecoyInput::commitment));
-        let true_commitment = self.true_input.revealed_commitment.commit(&pc_gens);
+        let true_commitment = self.true_input.revealed_commitment.commit(pc_gens);
         cs.insert(pi, true_commitment.to_affine());
         cs
     }
@@ -76,9 +76,10 @@ impl MlsagMaterial {
     pub fn sign(
         &self,
         msg: &[u8],
+        revealed_pseudo_commitment: &RevealedCommitment,
         pc_gens: &PedersenGens,
         mut rng: impl RngCore,
-    ) -> (MlsagSignature, RevealedCommitment) {
+    ) -> MlsagSignature {
         #[allow(non_snake_case)]
         let G1 = G1Projective::generator(); // TAI: should we use pedersen.G instead?
 
@@ -88,8 +89,7 @@ impl MlsagMaterial {
         let public_keys = self.public_keys(pi);
         let commitments = self.commitments(pi, pc_gens);
 
-        let revealed_pseudo_commitment = self.true_input.random_pseudo_commitment(&mut rng);
-        let pseudo_commitment = revealed_pseudo_commitment.commit(&pc_gens);
+        let pseudo_commitment = revealed_pseudo_commitment.commit(pc_gens);
 
         // commitment = r G + a H -- a is the amount, r is the blinding factor
         // pseudo_commitment = v G + a H
@@ -193,15 +193,13 @@ impl MlsagMaterial {
             );
         }
 
-        let sig = MlsagSignature {
+        MlsagSignature {
             c0: c[0],
             r,
             key_image: key_image.to_affine(),
             ring,
             pseudo_commitment: pseudo_commitment.to_affine(),
-        };
-
-        (sig, revealed_pseudo_commitment)
+        }
     }
 }
 
