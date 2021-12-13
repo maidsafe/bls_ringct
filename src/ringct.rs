@@ -1,7 +1,8 @@
-use blstrs::{group::GroupEncoding, G1Affine, G1Projective, Scalar};
+use blstrs::{group::Curve, group::GroupEncoding, G1Affine, G1Projective, Scalar};
 use bulletproofs::{BulletproofGens, PedersenGens, RangeProof};
 use merlin::Transcript;
 use rand_core::RngCore;
+use tiny_keccak::{Hasher, Sha3};
 
 use crate::{Error, MlsagMaterial, MlsagSignature, Result, RevealedCommitment};
 pub(crate) const RANGE_PROOF_BITS: usize = 64; // note: Range Proof max-bits is 64. allowed are: 8, 16, 32, 64 (only)
@@ -39,7 +40,7 @@ impl RingCtMaterial {
         &self,
         pc_gens: &PedersenGens,
         mut rng: impl RngCore,
-    ) -> Result<(Vec<u8>, RingCtTransaction, Vec<RevealedCommitment>)> {
+    ) -> Result<(RingCtTransaction, Vec<RevealedCommitment>)> {
         let bp_gens = BulletproofGens::new(RANGE_PROOF_BITS, RANGE_PROOF_PARTIES);
         let mut prover_ts = Transcript::new(MERLIN_TRANSCRIPT_LABEL);
 
@@ -49,29 +50,20 @@ impl RingCtMaterial {
         //   All PseudoCommitments
         //   All output commitments
         //   All output range proofs
+        //
+        //   notes:
+        //     1. the real pk is randomly mixed with decoys by MlsagMaterial
+        //     2. output commitments and range_proofs are bundled together
+        //        in OutputProofs
 
         // All public keys in all rings
-        let true_input_public_keys: Vec<G1Projective> = self
-            .inputs
-            .iter()
-            .map(|m| m.true_input.public_key())
-            .collect();
-        let decoy_inputs_public_keys: Vec<G1Affine> = self
-            .inputs
-            .iter()
-            .flat_map(|m| {
-                m.decoy_inputs
-                    .iter()
-                    .map(|d| d.public_key())
-                    .collect::<Vec<G1Affine>>()
-            })
-            .collect();
+        let public_keys: Vec<G1Affine> = self.inputs.iter().flat_map(|m| m.public_keys()).collect();
 
         // All key-images,
-        let true_input_key_images: Vec<G1Projective> = self
+        let true_input_key_images: Vec<G1Affine> = self
             .inputs
             .iter()
-            .map(|m| m.true_input.key_image())
+            .map(|m| m.true_input.key_image().to_affine())
             .collect();
 
         // All PseudoCommitments.
@@ -80,10 +72,14 @@ impl RingCtMaterial {
             .iter()
             .map(|m| m.true_input.random_pseudo_commitment(&mut rng))
             .collect();
+        let pseudo_commitments: Vec<G1Affine> = revealed_pseudo_commitments
+            .iter()
+            .map(|r| r.commit(pc_gens).to_affine())
+            .collect();
 
         // All output commitments
         let revealed_output_commitments = {
-            let mut output_commitments: Vec<RevealedCommitment> = self
+            let mut revealed_output_commitments: Vec<RevealedCommitment> = self
                 .outputs
                 .iter()
                 .map(|out| out.random_commitment(&mut rng))
@@ -94,7 +90,7 @@ impl RingCtMaterial {
                 .iter()
                 .map(RevealedCommitment::blinding)
                 .sum();
-            let output_sum: Scalar = output_commitments
+            let output_sum: Scalar = revealed_output_commitments
                 .iter()
                 .map(RevealedCommitment::blinding)
                 .sum();
@@ -102,7 +98,7 @@ impl RingCtMaterial {
             let output_blinding_correction = input_sum - output_sum;
 
             if let Some(last_output) = self.outputs.last() {
-                output_commitments.push(RevealedCommitment {
+                revealed_output_commitments.push(RevealedCommitment {
                     value: last_output.amount,
                     blinding: output_blinding_correction,
                 });
@@ -110,11 +106,11 @@ impl RingCtMaterial {
                 panic!("Expected at least one output")
             }
 
-            output_commitments
+            revealed_output_commitments
         };
 
         // All output range proofs
-        let outputs: Vec<OutputProof> = revealed_output_commitments
+        let output_proofs: Vec<OutputProof> = revealed_output_commitments
             .iter()
             .map(|revealed_commitment| {
                 let (range_proof, commitment) = RangeProof::prove_single(
@@ -134,40 +130,55 @@ impl RingCtMaterial {
             .collect::<Result<Vec<_>>>()?;
 
         // Generate message to sign.
-        let mut msg: Vec<u8> = Default::default();
-        for t in true_input_public_keys.iter() {
-            msg.extend(t.to_bytes().as_ref());
-        }
-        for d in decoy_inputs_public_keys.iter() {
-            msg.extend(d.to_bytes().as_ref());
-        }
-        for t in true_input_key_images.iter() {
-            msg.extend(t.to_bytes().as_ref());
-        }
-        for r in revealed_pseudo_commitments.iter() {
-            msg.extend(r.to_bytes());
-        }
-        for o in revealed_output_commitments.iter() {
-            msg.extend(o.to_bytes());
-        }
-        for o in outputs.iter() {
-            msg.extend(o.to_bytes());
-        }
+        // note: must match message generated by RingCtTransaction::verify()
+        let msg = gen_message_for_signing(
+            &public_keys,
+            &true_input_key_images,
+            &pseudo_commitments,
+            &output_proofs,
+        );
 
         // We create a ring signature for each input
         let mlsags: Vec<MlsagSignature> = self
             .inputs
             .iter()
             .zip(revealed_pseudo_commitments.iter())
-            .map(|(m, r)| m.sign(&msg, r, pc_gens, &mut rng))
+            .map(|(m, r)| m.sign(&msg, r, pc_gens))
             .collect();
 
         Ok((
-            msg,
-            RingCtTransaction { mlsags, outputs },
+            RingCtTransaction {
+                mlsags,
+                outputs: output_proofs,
+            },
             revealed_output_commitments,
         ))
     }
+}
+
+// note: used by both RingCtMaterial::sign and RingCtTransaction::verify()
+//       which must match.
+fn gen_message_for_signing(
+    public_keys: &[G1Affine],
+    true_input_key_images: &[G1Affine],
+    pseudo_commitments: &[G1Affine],
+    output_proofs: &[OutputProof],
+) -> Vec<u8> {
+    // Generate message to sign.
+    let mut msg: Vec<u8> = Default::default();
+    for pk in public_keys.iter() {
+        msg.extend(pk.to_bytes().as_ref());
+    }
+    for t in true_input_key_images.iter() {
+        msg.extend(t.to_bytes().as_ref());
+    }
+    for r in pseudo_commitments.iter() {
+        msg.extend(r.to_bytes().as_ref());
+    }
+    for o in output_proofs.iter() {
+        msg.extend(o.to_bytes());
+    }
+    msg
 }
 
 #[derive(Debug)]
@@ -200,9 +211,52 @@ pub struct RingCtTransaction {
 }
 
 impl RingCtTransaction {
-    pub fn verify(&self, msg: &[u8], public_commitments_per_ring: &[Vec<G1Affine>]) -> Result<()> {
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut v: Vec<u8> = Default::default();
+        for m in self.mlsags.iter() {
+            v.extend(&m.to_bytes());
+        }
+        for o in self.outputs.iter() {
+            v.extend(&o.to_bytes());
+        }
+        v
+    }
+
+    pub fn hash(&self) -> [u8; 32] {
+        let mut sha3 = Sha3::v256();
+
+        sha3.update(&self.to_bytes());
+
+        let mut hash = [0; 32];
+        sha3.finalize(&mut hash);
+        hash
+    }
+
+    // note: must match message generated by RingCtMaterial::sign()
+    pub fn gen_message(&self) -> Vec<u8> {
+        // All public keys in all rings
+        let public_keys: Vec<G1Affine> = self.mlsags.iter().flat_map(|m| m.public_keys()).collect();
+
+        // All key-images,
+        let true_input_key_images: Vec<G1Affine> =
+            self.mlsags.iter().map(|m| m.key_image).collect();
+
+        // All PseudoCommitments.
+        let pseudo_commitments: Vec<G1Affine> =
+            self.mlsags.iter().map(|m| m.pseudo_commitment()).collect();
+
+        gen_message_for_signing(
+            &public_keys,
+            &true_input_key_images,
+            &pseudo_commitments,
+            &self.outputs,
+        )
+    }
+
+    pub fn verify(&self, public_commitments_per_ring: &[Vec<G1Affine>]) -> Result<()> {
+        let msg = self.gen_message();
         for (mlsag, public_commitments) in self.mlsags.iter().zip(public_commitments_per_ring) {
-            mlsag.verify(msg, public_commitments)?
+            mlsag.verify(&msg, public_commitments)?
         }
 
         let pc_gens = PedersenGens::default();
@@ -314,17 +368,14 @@ mod tests {
         let decoy_inputs = ledger.fetch_decoys(2, &[true_input.public_key()]);
 
         let ring_ct = RingCtMaterial {
-            inputs: vec![MlsagMaterial {
-                true_input,
-                decoy_inputs,
-            }],
+            inputs: vec![MlsagMaterial::new(true_input, decoy_inputs, &mut rng)],
             outputs: vec![Output {
                 public_key: G1Projective::random(&mut rng).to_affine(),
                 amount: 3,
             }],
         };
 
-        let (msg, signed_tx, _revealed_output_commitments) = ring_ct
+        let (signed_tx, _revealed_output_commitments) = ring_ct
             .sign(&pc_gens, rng)
             .expect("Failed to sign transaction");
 
@@ -337,6 +388,6 @@ mod tests {
             )
         }));
 
-        assert!(signed_tx.verify(&msg, &public_commitments).is_ok());
+        assert!(signed_tx.verify(&public_commitments).is_ok());
     }
 }
