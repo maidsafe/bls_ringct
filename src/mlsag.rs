@@ -54,7 +54,7 @@ impl DecoyInput {
 pub struct MlsagMaterial {
     pub true_input: TrueInput,
     pub decoy_inputs: Vec<DecoyInput>,
-    pub pi: usize,
+    pub pi_base: u32,
     pub alpha: (Scalar, Scalar),
     pub r: Vec<(Scalar, Scalar)>,
 }
@@ -65,8 +65,7 @@ impl MlsagMaterial {
         decoy_inputs: Vec<DecoyInput>,
         mut rng: impl RngCore,
     ) -> Self {
-        // The position of the true input will be randomply placed amongst the decoys
-        let pi = rng.next_u32() as usize % (decoy_inputs.len() + 1);
+        let pi_base = rng.next_u32();
 
         let ring_len = decoy_inputs.len() + 1;
         let alpha = (Scalar::random(&mut rng), Scalar::random(&mut rng));
@@ -77,7 +76,7 @@ impl MlsagMaterial {
         Self {
             true_input,
             decoy_inputs,
-            pi,
+            pi_base,
             alpha,
             r,
         }
@@ -87,16 +86,22 @@ impl MlsagMaterial {
         self.decoy_inputs.len() + 1 // + 1 for the true_input
     }
 
+    // Determines the index of the true input that will be randomly placed
+    // amongst the decoys
+    pub fn pi(&self) -> usize {
+        self.pi_base as usize % (self.decoy_inputs.len() + 1)
+    }
+
     pub fn public_keys(&self) -> Vec<G1Affine> {
         let mut keys = Vec::from_iter(self.decoy_inputs.iter().map(DecoyInput::public_key));
-        keys.insert(self.pi, self.true_input.public_key().to_affine());
+        keys.insert(self.pi(), self.true_input.public_key().to_affine());
         keys
     }
 
     pub fn commitments(&self, pc_gens: &PedersenGens) -> Vec<G1Affine> {
         let mut cs = Vec::from_iter(self.decoy_inputs.iter().map(DecoyInput::commitment));
         let true_commitment = self.true_input.revealed_commitment.commit(pc_gens);
-        cs.insert(self.pi, true_commitment.to_affine());
+        cs.insert(self.pi(), true_commitment.to_affine());
         cs
     }
 
@@ -111,7 +116,7 @@ impl MlsagMaterial {
 
         let public_keys = self.public_keys();
         let commitments = self.commitments(pc_gens);
-        let (pi, alpha, mut r) = (self.pi, self.alpha, self.r.clone());
+        let (pi, alpha, mut r) = (self.pi(), self.alpha, self.r.clone());
 
         let pseudo_commitment = revealed_pseudo_commitment.commit(pc_gens);
 
