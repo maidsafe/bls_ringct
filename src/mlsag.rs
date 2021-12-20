@@ -228,7 +228,7 @@ impl MlsagMaterial {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MlsagSignature {
     pub c0: Scalar,
     pub r: Vec<(Scalar, Scalar)>,
