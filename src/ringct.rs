@@ -30,6 +30,11 @@ impl Output {
     }
 }
 
+struct RevealedOutputCommitment {
+    pub public_key: G1Affine,
+    pub revealed_commitment: RevealedCommitment,
+}
+
 #[derive(Default)]
 pub struct RingCtMaterial {
     pub inputs: Vec<MlsagMaterial>,
@@ -42,16 +47,17 @@ impl RingCtMaterial {
         rng: impl RngCore + Copy,
     ) -> Result<(RingCtTransaction, Vec<RevealedCommitment>)> {
         // We need to gather a bunch of things for our message to sign.
-        //   All public keys in all rings
+        //   All public keys in all (input) rings
         //   All key-images,
         //   All PseudoCommitments
+        //   All output public keys.
         //   All output commitments
         //   All output range proofs
         //
         //   notes:
         //     1. the real pk is randomly mixed with decoys by MlsagMaterial
-        //     2. output commitments and range_proofs are bundled together
-        //        in OutputProofs
+        //     2. output commitments, range_proofs, and public_keys are bundled
+        //        together in OutputProofs
         //     3. all these must be generated in proper order. It would be nice
         //        to make RingCtMaterial deterministic by instantiating with a seed.
         let revealed_pseudo_commitments = self.revealed_pseudo_commitments(rng);
@@ -76,6 +82,11 @@ impl RingCtMaterial {
             .zip(revealed_pseudo_commitments.iter())
             .map(|(m, r)| m.sign(&msg, r, &Self::pc_gens()))
             .collect();
+
+        let revealed_output_commitments = revealed_output_commitments
+            .iter()
+            .map(|r| r.revealed_commitment)
+            .collect::<Vec<_>>();
 
         Ok((
             RingCtTransaction {
@@ -126,11 +137,14 @@ impl RingCtMaterial {
         &self,
         revealed_pseudo_commitments: &[RevealedCommitment],
         mut rng: impl RngCore,
-    ) -> Vec<RevealedCommitment> {
-        let mut revealed_output_commitments: Vec<RevealedCommitment> = self
+    ) -> Vec<RevealedOutputCommitment> {
+        let mut revealed_output_commitments: Vec<RevealedOutputCommitment> = self
             .outputs
             .iter()
-            .map(|out| out.random_commitment(&mut rng))
+            .map(|out| RevealedOutputCommitment {
+                public_key: out.public_key,
+                revealed_commitment: out.random_commitment(&mut rng),
+            })
             .take(self.outputs.len() - 1)
             .collect();
 
@@ -141,15 +155,18 @@ impl RingCtMaterial {
 
         let output_sum: Scalar = revealed_output_commitments
             .iter()
-            .map(RevealedCommitment::blinding)
+            .map(|r| r.revealed_commitment.blinding())
             .sum();
 
         let output_blinding_correction = input_sum - output_sum;
 
         if let Some(last_output) = self.outputs.last() {
-            revealed_output_commitments.push(RevealedCommitment {
-                value: last_output.amount,
-                blinding: output_blinding_correction,
+            revealed_output_commitments.push(RevealedOutputCommitment {
+                public_key: last_output.public_key,
+                revealed_commitment: RevealedCommitment {
+                    value: last_output.amount,
+                    blinding: output_blinding_correction,
+                },
             });
         } else {
             panic!("Expected at least one output")
@@ -159,23 +176,24 @@ impl RingCtMaterial {
 
     fn output_range_proofs(
         &self,
-        revealed_output_commitments: &[RevealedCommitment],
+        revealed_output_commitments: &[RevealedOutputCommitment],
     ) -> Result<Vec<OutputProof>> {
         let mut prover_ts = Transcript::new(MERLIN_TRANSCRIPT_LABEL);
 
         revealed_output_commitments
             .iter()
-            .map(|revealed_commitment| {
+            .map(|c| {
                 let (range_proof, commitment) = RangeProof::prove_single(
                     &Self::bp_gens(),
                     &Self::pc_gens(),
                     &mut prover_ts,
-                    revealed_commitment.value,
-                    &revealed_commitment.blinding,
+                    c.revealed_commitment.value,
+                    &c.revealed_commitment.blinding,
                     RANGE_PROOF_BITS,
                 )?;
 
                 Ok(OutputProof {
+                    public_key: c.public_key,
                     range_proof,
                     commitment,
                 })
@@ -211,6 +229,7 @@ fn gen_message_for_signing(
 
 #[derive(Debug, Clone)]
 pub struct OutputProof {
+    public_key: G1Affine,
     range_proof: RangeProof,
     commitment: G1Affine,
 }
@@ -218,9 +237,14 @@ pub struct OutputProof {
 impl OutputProof {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut v: Vec<u8> = Default::default();
+        v.extend(self.public_key.to_bytes().as_ref());
         v.extend(&self.range_proof.to_bytes());
         v.extend(self.commitment.to_bytes().as_ref());
         v
+    }
+
+    pub fn public_key(&self) -> &G1Affine {
+        &self.public_key
     }
 
     pub fn range_proof(&self) -> &RangeProof {
