@@ -9,6 +9,7 @@ use tiny_keccak::{Hasher, Sha3};
 
 use crate::{Error, Result, RevealedCommitment};
 
+#[derive(Debug, Clone)]
 pub struct TrueInput {
     pub secret_key: Scalar,
     pub revealed_commitment: RevealedCommitment,
@@ -35,7 +36,7 @@ impl TrueInput {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct DecoyInput {
     pub public_key: G1Affine,
     pub commitment: G1Affine,
@@ -51,6 +52,7 @@ impl DecoyInput {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct MlsagMaterial {
     pub true_input: TrueInput,
     pub decoy_inputs: Vec<DecoyInput>,
