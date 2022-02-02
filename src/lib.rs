@@ -9,8 +9,12 @@ pub use error::Error;
 pub use mlsag::{DecoyInput, MlsagMaterial, MlsagSignature, TrueInput};
 pub use ringct::{Output, RingCtMaterial};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 pub type Result<T> = std::result::Result<T, Error>;
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Copy)]
 pub struct RevealedCommitment {
     pub value: u64,

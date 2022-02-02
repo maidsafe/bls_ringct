@@ -4,12 +4,16 @@ use merlin::Transcript;
 use rand_core::RngCore;
 use tiny_keccak::{Hasher, Sha3};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{Error, MlsagMaterial, MlsagSignature, Result, RevealedCommitment};
 pub(crate) const RANGE_PROOF_BITS: usize = 64; // note: Range Proof max-bits is 64. allowed are: 8, 16, 32, 64 (only)
                                                //       This limits our amount field to 64 bits also.
 pub(crate) const RANGE_PROOF_PARTIES: usize = 1; // The maximum number of parties that can produce an aggregated proof
 pub(crate) const MERLIN_TRANSCRIPT_LABEL: &[u8] = b"BLST_RINGCT";
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Output {
     pub public_key: G1Affine,
@@ -31,12 +35,14 @@ impl Output {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 struct RevealedOutputCommitment {
     pub public_key: G1Affine,
     pub revealed_commitment: RevealedCommitment,
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Default)]
 pub struct RingCtMaterial {
     pub inputs: Vec<MlsagMaterial>,
@@ -236,6 +242,7 @@ fn gen_message_for_signing(
     msg
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct OutputProof {
     public_key: G1Affine,
@@ -265,6 +272,7 @@ impl OutputProof {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct RingCtTransaction {
     pub mlsags: Vec<MlsagSignature>,
