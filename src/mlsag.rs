@@ -9,6 +9,10 @@ use tiny_keccak::{Hasher, Sha3};
 
 use crate::{Error, Result, RevealedCommitment};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct TrueInput {
     pub secret_key: Scalar,
@@ -36,6 +40,7 @@ impl TrueInput {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Copy)]
 pub struct DecoyInput {
     pub public_key: G1Affine,
@@ -52,6 +57,7 @@ impl DecoyInput {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct MlsagMaterial {
     pub true_input: TrueInput,
@@ -230,6 +236,7 @@ impl MlsagMaterial {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct MlsagSignature {
     pub c0: Scalar,
