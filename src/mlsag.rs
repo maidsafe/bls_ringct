@@ -300,7 +300,6 @@ impl MlsagSignature {
             );
         }
 
-        println!("c': {:#?}", cprime);
         if self.c0 != cprime[0] {
             Err(Error::InvalidRingSignature)
         } else {
