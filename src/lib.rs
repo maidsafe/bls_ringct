@@ -2,7 +2,10 @@ pub mod error;
 pub mod mlsag;
 pub mod ringct;
 
-use blstrs::{group::ff::Field, G1Projective, Scalar};
+use blstrs::{
+    group::{ff::Field, Curve},
+    G1Affine, G1Projective, Scalar,
+};
 
 pub use blstrs;
 pub use error::Error;
@@ -54,6 +57,11 @@ impl RevealedCommitment {
 pub fn hash_to_curve(p: G1Projective) -> G1Projective {
     const DOMAIN: &[u8; 25] = b"blst-ringct-hash-to-curve";
     G1Projective::hash_to_curve(&p.to_compressed(), DOMAIN, &[])
+}
+
+/// returns KeyImage for the given derived public key
+pub fn key_image(derived_public_key: G1Projective, secret_key: Scalar) -> Result<G1Affine> {
+    Ok((hash_to_curve(derived_public_key) * secret_key).to_affine())
 }
 
 #[cfg(test)]
