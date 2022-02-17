@@ -2,7 +2,10 @@ pub mod error;
 pub mod mlsag;
 pub mod ringct;
 
-use blstrs::{group::ff::Field, G1Projective, Scalar};
+use blstrs::{
+    group::{ff::Field, Group},
+    G1Projective, Scalar,
+};
 
 pub use blstrs;
 pub use error::Error;
@@ -56,10 +59,14 @@ pub fn hash_to_curve(p: G1Projective) -> G1Projective {
     G1Projective::hash_to_curve(&p.to_compressed(), DOMAIN, &[])
 }
 
+pub fn public_key(secret_key: Scalar) -> G1Projective {
+    G1Projective::generator() * secret_key
+}
+
 /// returns KeyImage for the given public/secret key pair
 /// A key image is defined to be I = x * Hp(P)
-pub fn key_image(public_key: G1Projective, secret_key: Scalar) -> G1Projective {
-    hash_to_curve(public_key) * secret_key
+pub fn key_image(secret_key: Scalar) -> G1Projective {
+    hash_to_curve(public_key(secret_key)) * secret_key
 }
 
 #[cfg(test)]

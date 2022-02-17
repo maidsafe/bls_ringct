@@ -21,7 +21,7 @@ pub struct TrueInput {
 
 impl TrueInput {
     pub fn public_key(&self) -> G1Projective {
-        G1Projective::generator() * self.secret_key
+        crate::public_key(self.secret_key)
     }
 
     pub fn revealed_commitment(&self) -> &RevealedCommitment {
@@ -31,7 +31,7 @@ impl TrueInput {
     /// Computes the Key Image for this inputs keypair
     /// A key image is defined to be I = x * Hp(P)
     pub fn key_image(&self) -> G1Projective {
-        crate::key_image(self.public_key(), self.secret_key)
+        crate::key_image(self.secret_key)
     }
 
     /// Generate a pseudo-commitment to the input amount
