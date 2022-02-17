@@ -60,8 +60,8 @@ pub fn hash_to_curve(p: G1Projective) -> G1Projective {
 }
 
 /// returns KeyImage for the given public key
-pub fn key_image(public_key: G1Projective, secret_key: Scalar) -> Result<G1Affine> {
-    Ok((hash_to_curve(public_key) * secret_key).to_affine())
+pub fn key_image(public_key: G1Projective, secret_key: Scalar) -> G1Affine {
+    (hash_to_curve(public_key) * secret_key).to_affine()
 }
 
 #[cfg(test)]
