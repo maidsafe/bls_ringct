@@ -2,6 +2,7 @@ use blstrs::{group::Curve, group::GroupEncoding, G1Affine, G1Projective, Scalar}
 use bulletproofs::{BulletproofGens, PedersenGens, RangeProof};
 use merlin::Transcript;
 use rand_core::RngCore;
+use std::collections::BTreeSet;
 use tiny_keccak::{Hasher, Sha3};
 
 #[cfg(feature = "serde")]
@@ -338,6 +339,21 @@ impl RingCtTransaction {
                 &output.commitment,
                 RANGE_PROOF_BITS,
             )?;
+        }
+
+        // Verify that the tx has at least one input
+        if self.mlsags.is_empty() {
+            return Err(Error::TransactionMustHaveAnInput);
+        }
+
+        // Verify that each KeyImage is unique in this tx.
+        let keyimage_unique: BTreeSet<_> = self
+            .mlsags
+            .iter()
+            .map(|m| m.key_image.to_compressed())
+            .collect();
+        if keyimage_unique.len() != self.mlsags.len() {
+            return Err(Error::KeyImageNotUniqueAcrossInputs);
         }
 
         let input_sum: G1Projective = self
