@@ -59,14 +59,15 @@ pub fn hash_to_curve(p: G1Projective) -> G1Projective {
     G1Projective::hash_to_curve(&p.to_compressed(), DOMAIN, &[])
 }
 
-pub fn public_key(secret_key: Scalar) -> G1Projective {
-    G1Projective::generator() * secret_key
+pub fn public_key<S: Into<Scalar>>(secret_key: S) -> G1Projective {
+    G1Projective::generator() * secret_key.into()
 }
 
 /// returns KeyImage for the given public/secret key pair
 /// A key image is defined to be I = x * Hp(P)
-pub fn key_image(secret_key: Scalar) -> G1Projective {
-    hash_to_curve(public_key(secret_key)) * secret_key
+pub fn key_image<S: Into<Scalar>>(secret_key: S) -> G1Projective {
+    let sk = secret_key.into();
+    hash_to_curve(public_key(sk)) * sk
 }
 
 #[cfg(test)]
