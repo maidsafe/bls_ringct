@@ -20,6 +20,13 @@ pub struct TrueInput {
 }
 
 impl TrueInput {
+    pub fn new<S: Into<Scalar>>(secret_key: S, revealed_commitment: RevealedCommitment) -> Self {
+        Self {
+            secret_key: secret_key.into(),
+            revealed_commitment,
+        }
+    }
+
     pub fn public_key(&self) -> G1Projective {
         crate::public_key(self.secret_key)
     }
