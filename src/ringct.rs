@@ -14,19 +14,29 @@ pub(crate) const RANGE_PROOF_BITS: usize = 64; // note: Range Proof max-bits is 
 pub(crate) const RANGE_PROOF_PARTIES: usize = 1; // The maximum number of parties that can produce an aggregated proof
 pub(crate) const MERLIN_TRANSCRIPT_LABEL: &[u8] = b"BLST_RINGCT";
 
+/// Represents a Dbc's value.
+pub type Amount = u64;
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone)]
 pub struct Output {
     pub public_key: G1Affine,
-    pub amount: u64,
+    pub amount: Amount,
 }
 
 impl Output {
+    pub fn new<G: Into<G1Affine>>(public_key: G, amount: Amount) -> Self {
+        Self {
+            public_key: public_key.into(),
+            amount,
+        }
+    }
+
     pub fn public_key(&self) -> G1Affine {
         self.public_key
     }
 
-    pub fn amount(&self) -> u64 {
+    pub fn amount(&self) -> Amount {
         self.amount
     }
 
