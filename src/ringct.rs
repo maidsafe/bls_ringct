@@ -205,11 +205,13 @@ impl RingCtMaterial {
     ) -> Result<Vec<OutputProof>> {
         let mut prover_ts = Transcript::new(MERLIN_TRANSCRIPT_LABEL);
 
+        let bp_gens = Self::bp_gens();
+
         revealed_output_commitments
             .iter()
             .map(|c| {
                 let (range_proof, commitment) = RangeProof::prove_single_with_rng(
-                    &Self::bp_gens(),
+                    &bp_gens,
                     &Self::pc_gens(),
                     &mut prover_ts,
                     c.revealed_commitment.value,
@@ -339,11 +341,12 @@ impl RingCtTransaction {
         }
 
         let mut prover_ts = Transcript::new(MERLIN_TRANSCRIPT_LABEL);
+        let bp_gens = RingCtMaterial::bp_gens();
 
         for output in self.outputs.iter() {
             // Verification requires a transcript with identical initial state:
             output.range_proof.verify_single(
-                &RingCtMaterial::bp_gens(),
+                &bp_gens,
                 &RingCtMaterial::pc_gens(),
                 &mut prover_ts,
                 &output.commitment,
