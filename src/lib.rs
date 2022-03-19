@@ -4,6 +4,9 @@ pub mod ringct;
 
 // re-export deps used in our public API
 pub use bulletproofs;
+pub use bulletproofs::blstrs;
+pub use bulletproofs::group;
+pub use bulletproofs::rand_core;
 #[cfg(feature = "serde")]
 pub use serde;
 
