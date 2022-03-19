@@ -1,7 +1,7 @@
 use bulletproofs::{
     blstrs::{G1Affine, G1Projective, Scalar},
     group::{ff::Field, Curve, Group, GroupEncoding},
-    rand_core::RngCore,
+    rand::RngCore,
     PedersenGens,
 };
 use tiny_keccak::{Hasher, Sha3};

@@ -6,14 +6,14 @@ pub mod ringct;
 pub use bulletproofs;
 pub use bulletproofs::blstrs;
 pub use bulletproofs::group;
-pub use bulletproofs::rand_core;
+pub use bulletproofs::rand;
 #[cfg(feature = "serde")]
 pub use serde;
 
 use bulletproofs::{
     blstrs::{G1Projective, Scalar},
     group::{ff::Field, Group},
-    rand_core::RngCore,
+    rand::RngCore,
 };
 
 pub use error::Error;

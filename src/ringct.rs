@@ -4,7 +4,7 @@ use bulletproofs::{
     group::Curve,
     group::GroupEncoding,
     merlin::Transcript,
-    rand_core::{CryptoRng, RngCore},
+    rand::{CryptoRng, RngCore},
     BulletproofGens, PedersenGens, RangeProof,
 };
 use std::collections::BTreeSet;
@@ -403,7 +403,7 @@ mod tests {
 
     use bulletproofs::{
         group::{ff::Field, Curve, Group},
-        rand_core::OsRng,
+        rand::rngs::OsRng,
     };
 
     use crate::{DecoyInput, MlsagMaterial, TrueInput};
