@@ -1,10 +1,9 @@
-use blstrs::{
-    group::GroupEncoding,
-    group::{ff::Field, Curve, Group},
-    G1Affine, G1Projective, Scalar,
+use bulletproofs::{
+    blstrs::{G1Affine, G1Projective, Scalar},
+    group::{ff::Field, Curve, Group, GroupEncoding},
+    rand::RngCore,
+    PedersenGens,
 };
-use bulletproofs::PedersenGens;
-use rand_core::RngCore;
 use tiny_keccak::{Hasher, Sha3};
 
 use crate::{Error, Result, RevealedCommitment};

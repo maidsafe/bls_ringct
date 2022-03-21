@@ -2,12 +2,20 @@ pub mod error;
 pub mod mlsag;
 pub mod ringct;
 
-use blstrs::{
+// re-export deps used in our public API
+pub use bulletproofs;
+pub use bulletproofs::blstrs;
+pub use bulletproofs::group;
+pub use bulletproofs::rand;
+#[cfg(feature = "serde")]
+pub use serde;
+
+use bulletproofs::{
+    blstrs::{G1Projective, Scalar},
     group::{ff::Field, Group},
-    G1Projective, Scalar,
+    rand::RngCore,
 };
 
-pub use blstrs;
 pub use error::Error;
 pub use mlsag::{DecoyInput, MlsagMaterial, MlsagSignature, TrueInput};
 pub use ringct::{Output, RingCtMaterial};
@@ -33,7 +41,7 @@ impl RevealedCommitment {
     }
 
     /// Construct a revealed commitment from a value, generating a blinding randomly
-    pub fn from_value(value: u64, mut rng: impl rand_core::RngCore) -> Self {
+    pub fn from_value(value: u64, mut rng: impl RngCore) -> Self {
         Self {
             value,
             blinding: Scalar::random(&mut rng),

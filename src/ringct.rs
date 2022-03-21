@@ -1,7 +1,12 @@
-use blstrs::{group::Curve, group::GroupEncoding, G1Affine, G1Projective, Scalar};
-use bulletproofs::{BulletproofGens, PedersenGens, RangeProof};
-use merlin::Transcript;
-use rand_core::RngCore;
+use bulletproofs::{
+    blstrs::{G1Affine, G1Projective, Scalar},
+    group::ff::Field,
+    group::Curve,
+    group::GroupEncoding,
+    merlin::Transcript,
+    rand::{CryptoRng, RngCore},
+    BulletproofGens, PedersenGens, RangeProof,
+};
 use std::collections::BTreeSet;
 use tiny_keccak::{Hasher, Sha3};
 
@@ -63,7 +68,7 @@ pub struct RingCtMaterial {
 impl RingCtMaterial {
     pub fn sign(
         &self,
-        mut rng: impl RngCore + rand_core::CryptoRng,
+        mut rng: impl RngCore + CryptoRng,
     ) -> Result<(RingCtTransaction, Vec<RevealedCommitment>)> {
         // We need to gather a bunch of things for our message to sign.
         //   All public keys in all (input) rings
@@ -172,15 +177,17 @@ impl RingCtMaterial {
             .take(self.outputs.len() - 1)
             .collect();
 
+        // todo: replace fold() with sum() when supported in blstrs
         let input_sum: Scalar = revealed_pseudo_commitments
             .iter()
             .map(RevealedCommitment::blinding)
-            .sum();
+            .fold(Scalar::zero(), |sum, x| sum + x);
 
+        // todo: replace fold() with sum() when supported in blstrs
         let output_sum: Scalar = revealed_output_commitments
             .iter()
             .map(|r| r.revealed_commitment.blinding())
-            .sum();
+            .fold(Scalar::zero(), |sum, x| sum + x);
 
         let output_blinding_correction = input_sum - output_sum;
 
@@ -201,7 +208,7 @@ impl RingCtMaterial {
     fn output_range_proofs(
         &self,
         revealed_output_commitments: &[RevealedOutputCommitment],
-        mut rng: impl RngCore + rand_core::CryptoRng,
+        mut rng: impl RngCore + CryptoRng,
     ) -> Result<Vec<OutputProof>> {
         let mut prover_ts = Transcript::new(MERLIN_TRANSCRIPT_LABEL);
 
@@ -394,8 +401,10 @@ impl RingCtTransaction {
 mod tests {
     use std::collections::{BTreeMap, BTreeSet};
 
-    use blstrs::group::{ff::Field, Curve, Group};
-    use rand_core::OsRng;
+    use bulletproofs::{
+        group::{ff::Field, Curve, Group},
+        rand::rngs::OsRng,
+    };
 
     use crate::{DecoyInput, MlsagMaterial, TrueInput};
 

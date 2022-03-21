@@ -4,13 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# blstrs = "0.4.1"
-blstrs = { git = "https://github.com/davidrusu/blstrs.git", branch="bulletproofs-fixes" }
-rand_core = "0.6.3"
 thiserror = "1"
 tiny-keccak = { version = "2.0", features = ["sha3"] }
-merlin = { version = "3", default-features = false }
-bulletproofs = { git = "https://github.com/davidrusu/blst-bulletproofs.git", branch="bls12-381-curve" }
+bulletproofs = { git = "https://github.com/dan-da/blst-bulletproofs.git", branch="blstrs_0_4_2_pr"}
 serde = { version = "1.0.130", optional = true }
 
 [dev-dependencies]
