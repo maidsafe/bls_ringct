@@ -18,4 +18,6 @@ pub enum Error {
     TransactionMustHaveAnInput,
     #[error("key image is not unique across all transaction inputs")]
     KeyImageNotUniqueAcrossInputs,
+    #[error("public key is not unique across all transaction inputs")]
+    PublicKeyNotUniqueAcrossInputs,
 }

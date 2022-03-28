@@ -376,6 +376,24 @@ impl RingCtTransaction {
             return Err(Error::KeyImageNotUniqueAcrossInputs);
         }
 
+        // Verify that each public_key is unique across all input mlsag
+        let pk_unique: BTreeSet<_> = self
+            .mlsags
+            .iter()
+            .flat_map(|m| {
+                m.public_keys()
+                    .iter()
+                    .map(|pk| pk.to_compressed())
+                    .collect::<Vec<[u8; 48]>>()
+            })
+            .collect();
+
+        let pk_count = self.mlsags.iter().map(|m| m.public_keys().len()).sum();
+
+        if pk_unique.len() != pk_count {
+            return Err(Error::PublicKeyNotUniqueAcrossInputs);
+        }
+
         let input_sum: G1Projective = self
             .mlsags
             .iter()
