@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 thiserror = "1"
 tiny-keccak = { version = "2.0", features = ["sha3"] }
-bulletproofs = { git = "https://github.com/dan-da/blst-bulletproofs.git", branch="blstrs_0_4_2_pr"}
+bulletproofs = { git = "https://github.com/maidsafe/blst-bulletproofs.git"}
 serde = { version = "1.0.130", optional = true }
 
 [dev-dependencies]
