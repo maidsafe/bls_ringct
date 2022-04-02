@@ -1,5 +1,9 @@
 use thiserror::Error;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Error)]
 pub enum Error {
     #[error("We need a corresponding public key for each MLSAG ring entry")]
