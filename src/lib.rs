@@ -3,17 +3,15 @@ pub mod mlsag;
 pub mod ringct;
 
 // re-export deps used in our public API
-pub use bulletproofs;
-pub use bulletproofs::blstrs;
-pub use bulletproofs::group;
-pub use bulletproofs::rand;
 #[cfg(feature = "serde")]
 pub use serde;
+pub use sn_bulletproofs::{self, blstrs, group, rand};
 
-use bulletproofs::{
+use sn_bulletproofs::{
     blstrs::{G1Projective, Scalar},
     group::{ff::Field, Group},
     rand::RngCore,
+    PedersenGens,
 };
 
 pub use error::Error;
@@ -48,7 +46,7 @@ impl RevealedCommitment {
         }
     }
 
-    pub fn commit(&self, pc_gens: &bulletproofs::PedersenGens) -> G1Projective {
+    pub fn commit(&self, pc_gens: &PedersenGens) -> G1Projective {
         pc_gens.commit(Scalar::from(self.value), self.blinding)
     }
 
