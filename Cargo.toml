@@ -1,12 +1,12 @@
 [package]
-name = "blst_ringct"
+name = "sn_ringct"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 thiserror = "1"
 tiny-keccak = { version = "2.0", features = ["sha3"] }
-bulletproofs = { git = "https://github.com/maidsafe/blst-bulletproofs.git"}
+sn_bulletproofs = "0.1.0"
 serde = { version = "1.0.130", optional = true }
 
 [dev-dependencies]

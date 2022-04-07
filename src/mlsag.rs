@@ -1,4 +1,4 @@
-use bulletproofs::{
+use sn_bulletproofs::{
     blstrs::{G1Affine, G1Projective, Scalar},
     group::{ff::Field, Curve, Group, GroupEncoding},
     rand::RngCore,
