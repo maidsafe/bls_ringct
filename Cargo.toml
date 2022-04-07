@@ -1,6 +1,12 @@
 [package]
 name = "sn_ringct"
 version = "0.1.0"
+readme = "README.md"
+license = "BSD-3-Clause"
+repository = "https://github.com/maidsafe/sn_ringct"
+categories = ["cryptography"]
+keywords = ["cryptography", "crypto"]
+description = "A pure-Rust implementation of Ring Confidential Transactions"
 edition = "2021"
 
 [dependencies]
