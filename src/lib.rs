@@ -3,11 +3,11 @@ pub mod mlsag;
 pub mod ringct;
 
 // re-export deps used in our public API
+pub use bls_bulletproofs::{self, blstrs, group, rand};
 #[cfg(feature = "serde")]
 pub use serde;
-pub use sn_bulletproofs::{self, blstrs, group, rand};
 
-use sn_bulletproofs::{
+use bls_bulletproofs::{
     blstrs::{G1Projective, Scalar},
     group::{ff::Field, Group},
     rand::RngCore,

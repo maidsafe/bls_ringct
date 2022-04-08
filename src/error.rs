@@ -17,7 +17,7 @@ pub enum Error {
     #[error("KeyImage is not on the BLS12-381 G1 Curve")]
     KeyImageNotOnCurve,
     #[error("BulletProofs Error: {0}")]
-    BulletProofs(#[from] sn_bulletproofs::ProofError),
+    BulletProofs(#[from] bls_bulletproofs::ProofError),
     #[error("The DBC transaction must have at least one input")]
     TransactionMustHaveAnInput,
     #[error("key image is not unique across all transaction inputs")]
