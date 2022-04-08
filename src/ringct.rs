@@ -1,4 +1,4 @@
-use sn_bulletproofs::{
+use bls_bulletproofs::{
     blstrs::{G1Affine, G1Projective, Scalar},
     group::ff::Field,
     group::Curve,
