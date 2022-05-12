@@ -243,7 +243,7 @@ impl MlsagMaterial {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct MlsagSignature {
     pub c0: Scalar,
     pub r: Vec<(Scalar, Scalar)>,

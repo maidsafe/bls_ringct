@@ -263,7 +263,7 @@ fn gen_message_for_signing(
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct OutputProof {
     public_key: G1Affine,
     range_proof: RangeProof,
@@ -293,7 +293,7 @@ impl OutputProof {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct RingCtTransaction {
     pub mlsags: Vec<MlsagSignature>,
     pub outputs: Vec<OutputProof>,
@@ -419,7 +419,7 @@ impl RingCtTransaction {
 mod tests {
     use std::collections::{BTreeMap, BTreeSet};
 
-    use bulletproofs::{
+    use bls_bulletproofs::{
         group::{ff::Field, Curve, Group},
         rand::rngs::OsRng,
     };
