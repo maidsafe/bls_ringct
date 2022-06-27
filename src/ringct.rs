@@ -7,7 +7,7 @@ use bls_bulletproofs::{
     rand::{CryptoRng, RngCore},
     BulletproofGens, PedersenGens, RangeProof,
 };
-use std::collections::BTreeSet;
+use std::{cmp::Ordering, collections::BTreeSet};
 use tiny_keccak::{Hasher, Sha3};
 
 #[cfg(feature = "serde")]
@@ -297,6 +297,18 @@ impl OutputProof {
 pub struct RingCtTransaction {
     pub mlsags: Vec<MlsagSignature>,
     pub outputs: Vec<OutputProof>,
+}
+
+impl PartialOrd for RingCtTransaction {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for RingCtTransaction {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.hash().cmp(&other.hash())
+    }
 }
 
 impl RingCtTransaction {
