@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["hash_to_curve","Hashes a point to another point on the G1 curve"],["key_image","returns KeyImage for the given public/secret key pair A key image is defined to be I = x * Hp(P)"],["public_key",""]],"mod":[["error",""],["mlsag",""],["ringct",""]],"struct":[["RevealedCommitment",""]],"type":[["Result",""]]};

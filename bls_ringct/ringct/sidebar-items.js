@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["Output",""],["OutputProof",""],["RingCtMaterial",""],["RingCtTransaction",""]],"type":[["Amount","Represents a Dbc’s value."]]};
