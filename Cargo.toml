@@ -20,7 +20,3 @@ thiserror = "1"
   [dependencies.tiny-keccak]
   version = "2.0"
   features = [ "sha3" ]
-
-[dev-dependencies]
-quickcheck = "1"
-quickcheck_macros = "1"

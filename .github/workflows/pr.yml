@@ -5,7 +5,6 @@ on:
     branches: [ master ]
 
 env:
-  CARGO_TERM_VERBOSE: true
   RUST_BACKTRACE: 1
   RUSTFLAGS: "-D warnings"
 
@@ -38,6 +37,8 @@ jobs:
       - shell: bash
         run: cargo clippy --all-targets
 
+      - shell: bash
+        run: cargo install ripgrep
       - uses: maidsafe/verify-licensing-info@main
         name: verify licensing
         with:
