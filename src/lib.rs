@@ -39,8 +39,8 @@ pub struct RevealedCommitment {
 impl RevealedCommitment {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut v: Vec<u8> = Default::default();
-        v.extend(&self.value.to_le_bytes());
-        v.extend(&self.blinding.to_bytes_le());
+        v.extend(self.value.to_le_bytes());
+        v.extend(self.blinding.to_bytes_le());
         v
     }
 
