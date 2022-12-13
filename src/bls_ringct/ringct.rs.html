@@ -1,10 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/ringct.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>ringct.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../bls_ringct/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a><h2 class="location"></h2>
-    </nav>
-    <nav class="sidebar"><a class="sidebar-logo" href="../../bls_ringct/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../bls_ringct/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
-                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
-                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/ringct.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>ringct.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../bls_ringct/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../bls_ringct/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../bls_ringct/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -536,538 +530,537 @@
 <span id="530">530</span>
 <span id="531">531</span>
 <span id="532">532</span>
-</pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022, MaidSafe.</span>
-<span class="comment">// All rights reserved.</span>
-<span class="comment">//</span>
-<span class="comment">// This SAFE Network Software is licensed under the BSD-3-Clause license.</span>
-<span class="comment">// Please see the LICENSE file for more details.</span>
+</pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022, MaidSafe.
+// All rights reserved.
+//
+// This SAFE Network Software is licensed under the BSD-3-Clause license.
+// Please see the LICENSE file for more details.
 
-<span class="kw">use</span> <span class="ident">bls_bulletproofs</span>::{
-    <span class="ident">blstrs</span>::{<span class="ident">G1Affine</span>, <span class="ident">G1Projective</span>, <span class="ident">Scalar</span>},
-    <span class="ident">group::ff::Field</span>,
-    <span class="ident">group::Curve</span>,
-    <span class="ident">group::GroupEncoding</span>,
-    <span class="ident">merlin::Transcript</span>,
-    <span class="ident">rand</span>::{<span class="ident">CryptoRng</span>, <span class="ident">RngCore</span>},
-    <span class="ident">BulletproofGens</span>, <span class="ident">PedersenGens</span>, <span class="ident">RangeProof</span>,
+</span><span class="kw">use </span>bls_bulletproofs::{
+    blstrs::{G1Affine, G1Projective, Scalar},
+    group::ff::Field,
+    group::Curve,
+    group::GroupEncoding,
+    merlin::Transcript,
+    rand::{CryptoRng, RngCore},
+    BulletproofGens, PedersenGens, RangeProof,
 };
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">cmp::Ordering</span>, <span class="ident">collections::BTreeSet</span>};
-<span class="kw">use</span> <span class="ident">tiny_keccak</span>::{<span class="ident">Hasher</span>, <span class="ident">Sha3</span>};
+<span class="kw">use </span>std::{cmp::Ordering, collections::BTreeSet};
+<span class="kw">use </span>tiny_keccak::{Hasher, Sha3};
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>)]</span>
-<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
+<span class="attribute">#[cfg(feature = <span class="string">&quot;serde&quot;</span>)]
+</span><span class="kw">use </span>serde::{Deserialize, Serialize};
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Error</span>, <span class="ident">MlsagMaterial</span>, <span class="ident">MlsagSignature</span>, <span class="prelude-ty">Result</span>, <span class="ident">RevealedCommitment</span>};
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const</span> <span class="ident">RANGE_PROOF_BITS</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">64</span>; <span class="comment">// note: Range Proof max-bits is 64. allowed are: 8, 16, 32, 64 (only)</span>
-                                               <span class="comment">//       This limits our amount field to 64 bits also.</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const</span> <span class="ident">RANGE_PROOF_PARTIES</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">1</span>; <span class="comment">// The maximum number of parties that can produce an aggregated proof</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const</span> <span class="ident">MERLIN_TRANSCRIPT_LABEL</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] <span class="op">=</span> <span class="string">b&quot;BLST_RINGCT&quot;</span>;
+<span class="kw">use crate</span>::{Error, MlsagMaterial, MlsagSignature, <span class="prelude-ty">Result</span>, RevealedCommitment};
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>RANGE_PROOF_BITS: usize = <span class="number">64</span>; <span class="comment">// note: Range Proof max-bits is 64. allowed are: 8, 16, 32, 64 (only)
+                                               //       This limits our amount field to 64 bits also.
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>RANGE_PROOF_PARTIES: usize = <span class="number">1</span>; <span class="comment">// The maximum number of parties that can produce an aggregated proof
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>MERLIN_TRANSCRIPT_LABEL: <span class="kw-2">&amp;</span>[u8] = <span class="string">b&quot;BLST_RINGCT&quot;</span>;
 
-<span class="doccomment">/// Represents a Dbc&#39;s value.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Amount</span> <span class="op">=</span> <span class="ident">u64</span>;
+<span class="doccomment">/// Represents a Dbc&#39;s value.
+</span><span class="kw">pub type </span>Amount = u64;
 
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Output</span> {
-    <span class="kw">pub</span> <span class="ident">public_key</span>: <span class="ident">G1Affine</span>,
-    <span class="kw">pub</span> <span class="ident">amount</span>: <span class="ident">Amount</span>,
+<span class="attribute">#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(Serialize, Deserialize))]
+#[derive(Debug, Clone)]
+</span><span class="kw">pub struct </span>Output {
+    <span class="kw">pub </span>public_key: G1Affine,
+    <span class="kw">pub </span>amount: Amount,
 }
 
-<span class="kw">impl</span> <span class="ident">Output</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">G</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">public_key</span>: <span class="ident">G</span>, <span class="ident">amount</span>: <span class="ident">Amount</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">public_key</span>: <span class="ident">public_key</span>.<span class="ident">into</span>(),
-            <span class="ident">amount</span>,
+<span class="kw">impl </span>Output {
+    <span class="kw">pub fn </span>new&lt;G: Into&lt;G1Affine&gt;&gt;(public_key: G, amount: Amount) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            public_key: public_key.into(),
+            amount,
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">public_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">G1Affine</span> {
-        <span class="self">self</span>.<span class="ident">public_key</span>
+    <span class="kw">pub fn </span>public_key(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; G1Affine {
+        <span class="self">self</span>.public_key
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">amount</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Amount</span> {
-        <span class="self">self</span>.<span class="ident">amount</span>
+    <span class="kw">pub fn </span>amount(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Amount {
+        <span class="self">self</span>.amount
     }
 
-    <span class="doccomment">/// Generate a commitment to the input amount</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random_commitment</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">rng</span>: <span class="kw">impl</span> <span class="ident">RngCore</span>) -&gt; <span class="ident">RevealedCommitment</span> {
-        <span class="ident">RevealedCommitment::from_value</span>(<span class="self">self</span>.<span class="ident">amount</span>, <span class="ident">rng</span>)
+    <span class="doccomment">/// Generate a commitment to the input amount
+    </span><span class="kw">pub fn </span>random_commitment(<span class="kw-2">&amp;</span><span class="self">self</span>, rng: <span class="kw">impl </span>RngCore) -&gt; RevealedCommitment {
+        RevealedCommitment::from_value(<span class="self">self</span>.amount, rng)
     }
 }
 
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">struct</span> <span class="ident">RevealedOutputCommitment</span> {
-    <span class="kw">pub</span> <span class="ident">public_key</span>: <span class="ident">G1Affine</span>,
-    <span class="kw">pub</span> <span class="ident">revealed_commitment</span>: <span class="ident">RevealedCommitment</span>,
+<span class="attribute">#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(Serialize, Deserialize))]
+#[derive(Debug, Clone)]
+</span><span class="kw">struct </span>RevealedOutputCommitment {
+    <span class="kw">pub </span>public_key: G1Affine,
+    <span class="kw">pub </span>revealed_commitment: RevealedCommitment,
 }
 
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Default</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RingCtMaterial</span> {
-    <span class="kw">pub</span> <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">MlsagMaterial</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">outputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Output</span><span class="op">&gt;</span>,
+<span class="attribute">#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Default)]
+</span><span class="kw">pub struct </span>RingCtMaterial {
+    <span class="kw">pub </span>inputs: Vec&lt;MlsagMaterial&gt;,
+    <span class="kw">pub </span>outputs: Vec&lt;Output&gt;,
 }
 
-<span class="kw">impl</span> <span class="ident">RingCtMaterial</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sign</span>(
+<span class="kw">impl </span>RingCtMaterial {
+    <span class="kw">pub fn </span>sign(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="kw-2">mut</span> <span class="ident">rng</span>: <span class="kw">impl</span> <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">RingCtTransaction</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">RevealedCommitment</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
-        <span class="comment">// We need to gather a bunch of things for our message to sign.</span>
-        <span class="comment">//   All public keys in all (input) rings</span>
-        <span class="comment">//   All key-images,</span>
-        <span class="comment">//   All PseudoCommitments</span>
-        <span class="comment">//   All output public keys.</span>
-        <span class="comment">//   All output commitments</span>
-        <span class="comment">//   All output range proofs</span>
-        <span class="comment">//</span>
-        <span class="comment">//   notes:</span>
-        <span class="comment">//     1. the real pk is randomly mixed with decoys by MlsagMaterial</span>
-        <span class="comment">//     2. output commitments, range_proofs, and public_keys are bundled</span>
-        <span class="comment">//        together in OutputProofs</span>
-        <span class="comment">//     3. all these must be generated in proper order. It would be nice</span>
-        <span class="comment">//        to make RingCtMaterial deterministic by instantiating with a seed.</span>
-        <span class="kw">let</span> <span class="ident">revealed_pseudo_commitments</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">revealed_pseudo_commitments</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
-        <span class="kw">let</span> <span class="ident">pseudo_commitments</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">pseudo_commitments</span>(<span class="kw-2">&amp;</span><span class="ident">revealed_pseudo_commitments</span>);
-        <span class="kw">let</span> <span class="ident">revealed_output_commitments</span> <span class="op">=</span>
-            <span class="self">self</span>.<span class="ident">revealed_output_commitments</span>(<span class="kw-2">&amp;</span><span class="ident">revealed_pseudo_commitments</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
-        <span class="kw">let</span> <span class="ident">output_proofs</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">output_range_proofs</span>(<span class="kw-2">&amp;</span><span class="ident">revealed_output_commitments</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>)<span class="question-mark">?</span>;
+        <span class="kw-2">mut </span>rng: <span class="kw">impl </span>RngCore + CryptoRng,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;(RingCtTransaction, Vec&lt;RevealedCommitment&gt;)&gt; {
+        <span class="comment">// We need to gather a bunch of things for our message to sign.
+        //   All public keys in all (input) rings
+        //   All key-images,
+        //   All PseudoCommitments
+        //   All output public keys.
+        //   All output commitments
+        //   All output range proofs
+        //
+        //   notes:
+        //     1. the real pk is randomly mixed with decoys by MlsagMaterial
+        //     2. output commitments, range_proofs, and public_keys are bundled
+        //        together in OutputProofs
+        //     3. all these must be generated in proper order. It would be nice
+        //        to make RingCtMaterial deterministic by instantiating with a seed.
+        </span><span class="kw">let </span>revealed_pseudo_commitments = <span class="self">self</span>.revealed_pseudo_commitments(<span class="kw-2">&amp;mut </span>rng);
+        <span class="kw">let </span>pseudo_commitments = <span class="self">self</span>.pseudo_commitments(<span class="kw-2">&amp;</span>revealed_pseudo_commitments);
+        <span class="kw">let </span>revealed_output_commitments =
+            <span class="self">self</span>.revealed_output_commitments(<span class="kw-2">&amp;</span>revealed_pseudo_commitments, <span class="kw-2">&amp;mut </span>rng);
+        <span class="kw">let </span>output_proofs = <span class="self">self</span>.output_range_proofs(<span class="kw-2">&amp;</span>revealed_output_commitments, <span class="kw-2">&amp;mut </span>rng)<span class="question-mark">?</span>;
 
-        <span class="comment">// Generate message to sign.</span>
-        <span class="comment">// note: must match message generated by RingCtTransaction::verify()</span>
-        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">gen_message_for_signing</span>(
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">public_keys</span>(),
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">key_images</span>(),
-            <span class="kw-2">&amp;</span><span class="ident">pseudo_commitments</span>,
-            <span class="kw-2">&amp;</span><span class="ident">output_proofs</span>,
+        <span class="comment">// Generate message to sign.
+        // note: must match message generated by RingCtTransaction::verify()
+        </span><span class="kw">let </span>msg = gen_message_for_signing(
+            <span class="kw-2">&amp;</span><span class="self">self</span>.public_keys(),
+            <span class="kw-2">&amp;</span><span class="self">self</span>.key_images(),
+            <span class="kw-2">&amp;</span>pseudo_commitments,
+            <span class="kw-2">&amp;</span>output_proofs,
         );
 
-        <span class="comment">// We create a ring signature for each input</span>
-        <span class="kw">let</span> <span class="ident">mlsags</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">MlsagSignature</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">inputs</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">zip</span>(<span class="ident">revealed_pseudo_commitments</span>.<span class="ident">iter</span>())
-            .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">m</span>, <span class="ident">r</span>)<span class="op">|</span> <span class="ident">m</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">msg</span>, <span class="ident">r</span>, <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::pc_gens</span>()))
-            .<span class="ident">collect</span>();
+        <span class="comment">// We create a ring signature for each input
+        </span><span class="kw">let </span>mlsags: Vec&lt;MlsagSignature&gt; = <span class="self">self
+            </span>.inputs
+            .iter()
+            .zip(revealed_pseudo_commitments.iter())
+            .map(|(m, r)| m.sign(<span class="kw-2">&amp;</span>msg, r, <span class="kw-2">&amp;</span><span class="self">Self</span>::pc_gens()))
+            .collect();
 
-        <span class="kw">let</span> <span class="ident">revealed_output_commitments</span> <span class="op">=</span> <span class="ident">revealed_output_commitments</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">revealed_commitment</span>)
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
+        <span class="kw">let </span>revealed_output_commitments = revealed_output_commitments
+            .iter()
+            .map(|r| r.revealed_commitment)
+            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
 
         <span class="prelude-val">Ok</span>((
-            <span class="ident">RingCtTransaction</span> {
-                <span class="ident">mlsags</span>,
-                <span class="ident">outputs</span>: <span class="ident">output_proofs</span>,
+            RingCtTransaction {
+                mlsags,
+                outputs: output_proofs,
             },
-            <span class="ident">revealed_output_commitments</span>,
+            revealed_output_commitments,
         ))
     }
 
-    <span class="kw">fn</span> <span class="ident">bp_gens</span>() -&gt; <span class="ident">BulletproofGens</span> {
-        <span class="ident">BulletproofGens::new</span>(<span class="ident">RANGE_PROOF_BITS</span>, <span class="ident">RANGE_PROOF_PARTIES</span>)
+    <span class="kw">fn </span>bp_gens() -&gt; BulletproofGens {
+        BulletproofGens::new(RANGE_PROOF_BITS, RANGE_PROOF_PARTIES)
     }
 
-    <span class="kw">fn</span> <span class="ident">pc_gens</span>() -&gt; <span class="ident">PedersenGens</span> {
-        <span class="ident">Default::default</span>()
+    <span class="kw">fn </span>pc_gens() -&gt; PedersenGens {
+        Default::default()
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">public_keys</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">inputs</span>.<span class="ident">iter</span>().<span class="ident">flat_map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="ident">m</span>.<span class="ident">public_keys</span>()).<span class="ident">collect</span>()
+    <span class="kw">pub fn </span>public_keys(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;G1Affine&gt; {
+        <span class="self">self</span>.inputs.iter().flat_map(|m| m.public_keys()).collect()
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">key_images</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">inputs</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="ident">m</span>.<span class="ident">true_input</span>.<span class="ident">key_image</span>().<span class="ident">to_affine</span>())
-            .<span class="ident">collect</span>()
+    <span class="kw">pub fn </span>key_images(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;G1Affine&gt; {
+        <span class="self">self</span>.inputs
+            .iter()
+            .map(|m| m.true_input.key_image().to_affine())
+            .collect()
     }
 
-    <span class="kw">fn</span> <span class="ident">revealed_pseudo_commitments</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">rng</span>: <span class="kw">impl</span> <span class="ident">RngCore</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">RevealedCommitment</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">inputs</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="ident">m</span>.<span class="ident">true_input</span>.<span class="ident">random_pseudo_commitment</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>))
-            .<span class="ident">collect</span>()
+    <span class="kw">fn </span>revealed_pseudo_commitments(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw-2">mut </span>rng: <span class="kw">impl </span>RngCore) -&gt; Vec&lt;RevealedCommitment&gt; {
+        <span class="self">self</span>.inputs
+            .iter()
+            .map(|m| m.true_input.random_pseudo_commitment(<span class="kw-2">&amp;mut </span>rng))
+            .collect()
     }
 
-    <span class="kw">fn</span> <span class="ident">pseudo_commitments</span>(
+    <span class="kw">fn </span>pseudo_commitments(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">revealed_pseudo_commitments</span>: <span class="kw-2">&amp;</span>[<span class="ident">RevealedCommitment</span>],
-    ) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span> {
-        <span class="ident">revealed_pseudo_commitments</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">commit</span>(<span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::pc_gens</span>()).<span class="ident">to_affine</span>())
-            .<span class="ident">collect</span>()
+        revealed_pseudo_commitments: <span class="kw-2">&amp;</span>[RevealedCommitment],
+    ) -&gt; Vec&lt;G1Affine&gt; {
+        revealed_pseudo_commitments
+            .iter()
+            .map(|r| r.commit(<span class="kw-2">&amp;</span><span class="self">Self</span>::pc_gens()).to_affine())
+            .collect()
     }
 
-    <span class="kw">fn</span> <span class="ident">revealed_output_commitments</span>(
+    <span class="kw">fn </span>revealed_output_commitments(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">revealed_pseudo_commitments</span>: <span class="kw-2">&amp;</span>[<span class="ident">RevealedCommitment</span>],
-        <span class="kw-2">mut</span> <span class="ident">rng</span>: <span class="kw">impl</span> <span class="ident">RngCore</span>,
-    ) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">RevealedOutputCommitment</span><span class="op">&gt;</span> {
-        <span class="comment">// avoid subtraction underflow in next step.</span>
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">outputs</span>.<span class="ident">is_empty</span>() {
-            <span class="kw">return</span> <span class="macro">vec!</span>[];
+        revealed_pseudo_commitments: <span class="kw-2">&amp;</span>[RevealedCommitment],
+        <span class="kw-2">mut </span>rng: <span class="kw">impl </span>RngCore,
+    ) -&gt; Vec&lt;RevealedOutputCommitment&gt; {
+        <span class="comment">// avoid subtraction underflow in next step.
+        </span><span class="kw">if </span><span class="self">self</span>.outputs.is_empty() {
+            <span class="kw">return </span><span class="macro">vec!</span>[];
         }
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">revealed_output_commitments</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">RevealedOutputCommitment</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">outputs</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">out</span><span class="op">|</span> <span class="ident">RevealedOutputCommitment</span> {
-                <span class="ident">public_key</span>: <span class="ident">out</span>.<span class="ident">public_key</span>,
-                <span class="ident">revealed_commitment</span>: <span class="ident">out</span>.<span class="ident">random_commitment</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>),
+        <span class="kw">let </span><span class="kw-2">mut </span>revealed_output_commitments: Vec&lt;RevealedOutputCommitment&gt; = <span class="self">self
+            </span>.outputs
+            .iter()
+            .map(|out| RevealedOutputCommitment {
+                public_key: out.public_key,
+                revealed_commitment: out.random_commitment(<span class="kw-2">&amp;mut </span>rng),
             })
-            .<span class="ident">take</span>(<span class="self">self</span>.<span class="ident">outputs</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">1</span>)
-            .<span class="ident">collect</span>();
+            .take(<span class="self">self</span>.outputs.len() - <span class="number">1</span>)
+            .collect();
 
-        <span class="comment">// todo: replace fold() with sum() when supported in blstrs</span>
-        <span class="kw">let</span> <span class="ident">input_sum</span>: <span class="ident">Scalar</span> <span class="op">=</span> <span class="ident">revealed_pseudo_commitments</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="ident">RevealedCommitment::blinding</span>)
-            .<span class="ident">fold</span>(<span class="ident">Scalar::zero</span>(), <span class="op">|</span><span class="ident">sum</span>, <span class="ident">x</span><span class="op">|</span> <span class="ident">sum</span> <span class="op">+</span> <span class="ident">x</span>);
+        <span class="comment">// todo: replace fold() with sum() when supported in blstrs
+        </span><span class="kw">let </span>input_sum: Scalar = revealed_pseudo_commitments
+            .iter()
+            .map(RevealedCommitment::blinding)
+            .fold(Scalar::zero(), |sum, x| sum + x);
 
-        <span class="comment">// todo: replace fold() with sum() when supported in blstrs</span>
-        <span class="kw">let</span> <span class="ident">output_sum</span>: <span class="ident">Scalar</span> <span class="op">=</span> <span class="ident">revealed_output_commitments</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">revealed_commitment</span>.<span class="ident">blinding</span>())
-            .<span class="ident">fold</span>(<span class="ident">Scalar::zero</span>(), <span class="op">|</span><span class="ident">sum</span>, <span class="ident">x</span><span class="op">|</span> <span class="ident">sum</span> <span class="op">+</span> <span class="ident">x</span>);
+        <span class="comment">// todo: replace fold() with sum() when supported in blstrs
+        </span><span class="kw">let </span>output_sum: Scalar = revealed_output_commitments
+            .iter()
+            .map(|r| r.revealed_commitment.blinding())
+            .fold(Scalar::zero(), |sum, x| sum + x);
 
-        <span class="kw">let</span> <span class="ident">output_blinding_correction</span> <span class="op">=</span> <span class="ident">input_sum</span> <span class="op">-</span> <span class="ident">output_sum</span>;
+        <span class="kw">let </span>output_blinding_correction = input_sum - output_sum;
 
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">last_output</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">outputs</span>.<span class="ident">last</span>() {
-            <span class="ident">revealed_output_commitments</span>.<span class="ident">push</span>(<span class="ident">RevealedOutputCommitment</span> {
-                <span class="ident">public_key</span>: <span class="ident">last_output</span>.<span class="ident">public_key</span>,
-                <span class="ident">revealed_commitment</span>: <span class="ident">RevealedCommitment</span> {
-                    <span class="ident">value</span>: <span class="ident">last_output</span>.<span class="ident">amount</span>,
-                    <span class="ident">blinding</span>: <span class="ident">output_blinding_correction</span>,
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(last_output) = <span class="self">self</span>.outputs.last() {
+            revealed_output_commitments.push(RevealedOutputCommitment {
+                public_key: last_output.public_key,
+                revealed_commitment: RevealedCommitment {
+                    value: last_output.amount,
+                    blinding: output_blinding_correction,
                 },
             });
-        } <span class="kw">else</span> {
+        } <span class="kw">else </span>{
             <span class="macro">panic!</span>(<span class="string">&quot;Expected at least one output&quot;</span>)
         }
-        <span class="ident">revealed_output_commitments</span>
+        revealed_output_commitments
     }
 
-    <span class="kw">fn</span> <span class="ident">output_range_proofs</span>(
+    <span class="kw">fn </span>output_range_proofs(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">revealed_output_commitments</span>: <span class="kw-2">&amp;</span>[<span class="ident">RevealedOutputCommitment</span>],
-        <span class="kw-2">mut</span> <span class="ident">rng</span>: <span class="kw">impl</span> <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">OutputProof</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prover_ts</span> <span class="op">=</span> <span class="ident">Transcript::new</span>(<span class="ident">MERLIN_TRANSCRIPT_LABEL</span>);
+        revealed_output_commitments: <span class="kw-2">&amp;</span>[RevealedOutputCommitment],
+        <span class="kw-2">mut </span>rng: <span class="kw">impl </span>RngCore + CryptoRng,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;OutputProof&gt;&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>prover_ts = Transcript::new(MERLIN_TRANSCRIPT_LABEL);
 
-        <span class="kw">let</span> <span class="ident">bp_gens</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::bp_gens</span>();
+        <span class="kw">let </span>bp_gens = <span class="self">Self</span>::bp_gens();
 
-        <span class="ident">revealed_output_commitments</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> {
-                <span class="kw">let</span> (<span class="ident">range_proof</span>, <span class="ident">commitment</span>) <span class="op">=</span> <span class="ident">RangeProof::prove_single_with_rng</span>(
-                    <span class="kw-2">&amp;</span><span class="ident">bp_gens</span>,
-                    <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::pc_gens</span>(),
-                    <span class="kw-2">&amp;mut</span> <span class="ident">prover_ts</span>,
-                    <span class="ident">c</span>.<span class="ident">revealed_commitment</span>.<span class="ident">value</span>,
-                    <span class="kw-2">&amp;</span><span class="ident">c</span>.<span class="ident">revealed_commitment</span>.<span class="ident">blinding</span>,
-                    <span class="ident">RANGE_PROOF_BITS</span>,
-                    <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>,
+        revealed_output_commitments
+            .iter()
+            .map(|c| {
+                <span class="kw">let </span>(range_proof, commitment) = RangeProof::prove_single_with_rng(
+                    <span class="kw-2">&amp;</span>bp_gens,
+                    <span class="kw-2">&amp;</span><span class="self">Self</span>::pc_gens(),
+                    <span class="kw-2">&amp;mut </span>prover_ts,
+                    c.revealed_commitment.value,
+                    <span class="kw-2">&amp;</span>c.revealed_commitment.blinding,
+                    RANGE_PROOF_BITS,
+                    <span class="kw-2">&amp;mut </span>rng,
                 )<span class="question-mark">?</span>;
 
-                <span class="prelude-val">Ok</span>(<span class="ident">OutputProof</span> {
-                    <span class="ident">public_key</span>: <span class="ident">c</span>.<span class="ident">public_key</span>,
-                    <span class="ident">range_proof</span>,
-                    <span class="ident">commitment</span>,
+                <span class="prelude-val">Ok</span>(OutputProof {
+                    public_key: c.public_key,
+                    range_proof,
+                    commitment,
                 })
             })
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()
+            .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;&gt;()
     }
 }
 
-<span class="comment">// note: used by both RingCtMaterial::sign and RingCtTransaction::verify()</span>
-<span class="comment">//       which must match.</span>
-<span class="kw">fn</span> <span class="ident">gen_message_for_signing</span>(
-    <span class="ident">public_keys</span>: <span class="kw-2">&amp;</span>[<span class="ident">G1Affine</span>],
-    <span class="ident">key_images</span>: <span class="kw-2">&amp;</span>[<span class="ident">G1Affine</span>],
-    <span class="ident">pseudo_commitments</span>: <span class="kw-2">&amp;</span>[<span class="ident">G1Affine</span>],
-    <span class="ident">output_proofs</span>: <span class="kw-2">&amp;</span>[<span class="ident">OutputProof</span>],
-) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-    <span class="comment">// Generate message to sign.</span>
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">msg</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Default::default</span>();
-    <span class="kw">for</span> <span class="ident">pk</span> <span class="kw">in</span> <span class="ident">public_keys</span>.<span class="ident">iter</span>() {
-        <span class="ident">msg</span>.<span class="ident">extend</span>(<span class="ident">pk</span>.<span class="ident">to_bytes</span>().<span class="ident">as_ref</span>());
+<span class="comment">// note: used by both RingCtMaterial::sign and RingCtTransaction::verify()
+//       which must match.
+</span><span class="kw">fn </span>gen_message_for_signing(
+    public_keys: <span class="kw-2">&amp;</span>[G1Affine],
+    key_images: <span class="kw-2">&amp;</span>[G1Affine],
+    pseudo_commitments: <span class="kw-2">&amp;</span>[G1Affine],
+    output_proofs: <span class="kw-2">&amp;</span>[OutputProof],
+) -&gt; Vec&lt;u8&gt; {
+    <span class="comment">// Generate message to sign.
+    </span><span class="kw">let </span><span class="kw-2">mut </span>msg: Vec&lt;u8&gt; = Default::default();
+    <span class="kw">for </span>pk <span class="kw">in </span>public_keys.iter() {
+        msg.extend(pk.to_bytes().as_ref());
     }
-    <span class="kw">for</span> <span class="ident">t</span> <span class="kw">in</span> <span class="ident">key_images</span>.<span class="ident">iter</span>() {
-        <span class="ident">msg</span>.<span class="ident">extend</span>(<span class="ident">t</span>.<span class="ident">to_bytes</span>().<span class="ident">as_ref</span>());
+    <span class="kw">for </span>t <span class="kw">in </span>key_images.iter() {
+        msg.extend(t.to_bytes().as_ref());
     }
-    <span class="kw">for</span> <span class="ident">r</span> <span class="kw">in</span> <span class="ident">pseudo_commitments</span>.<span class="ident">iter</span>() {
-        <span class="ident">msg</span>.<span class="ident">extend</span>(<span class="ident">r</span>.<span class="ident">to_bytes</span>().<span class="ident">as_ref</span>());
+    <span class="kw">for </span>r <span class="kw">in </span>pseudo_commitments.iter() {
+        msg.extend(r.to_bytes().as_ref());
     }
-    <span class="kw">for</span> <span class="ident">o</span> <span class="kw">in</span> <span class="ident">output_proofs</span>.<span class="ident">iter</span>() {
-        <span class="ident">msg</span>.<span class="ident">extend</span>(<span class="ident">o</span>.<span class="ident">to_bytes</span>());
+    <span class="kw">for </span>o <span class="kw">in </span>output_proofs.iter() {
+        msg.extend(o.to_bytes());
     }
-    <span class="ident">msg</span>
+    msg
 }
 
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">OutputProof</span> {
-    <span class="ident">public_key</span>: <span class="ident">G1Affine</span>,
-    <span class="ident">range_proof</span>: <span class="ident">RangeProof</span>,
-    <span class="ident">commitment</span>: <span class="ident">G1Affine</span>,
+<span class="attribute">#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(Serialize, Deserialize))]
+#[derive(Eq, PartialEq, Debug, Clone)]
+</span><span class="kw">pub struct </span>OutputProof {
+    public_key: G1Affine,
+    range_proof: RangeProof,
+    commitment: G1Affine,
 }
 
-<span class="kw">impl</span> <span class="ident">OutputProof</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">v</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Default::default</span>();
-        <span class="ident">v</span>.<span class="ident">extend</span>(<span class="self">self</span>.<span class="ident">public_key</span>.<span class="ident">to_bytes</span>().<span class="ident">as_ref</span>());
-        <span class="ident">v</span>.<span class="ident">extend</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">range_proof</span>.<span class="ident">to_bytes</span>());
-        <span class="ident">v</span>.<span class="ident">extend</span>(<span class="self">self</span>.<span class="ident">commitment</span>.<span class="ident">to_bytes</span>().<span class="ident">as_ref</span>());
-        <span class="ident">v</span>
+<span class="kw">impl </span>OutputProof {
+    <span class="kw">pub fn </span>to_bytes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;u8&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>v: Vec&lt;u8&gt; = Default::default();
+        v.extend(<span class="self">self</span>.public_key.to_bytes().as_ref());
+        v.extend(<span class="kw-2">&amp;</span><span class="self">self</span>.range_proof.to_bytes());
+        v.extend(<span class="self">self</span>.commitment.to_bytes().as_ref());
+        v
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">public_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">G1Affine</span> {
-        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">public_key</span>
+    <span class="kw">pub fn </span>public_key(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>G1Affine {
+        <span class="kw-2">&amp;</span><span class="self">self</span>.public_key
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">range_proof</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">RangeProof</span> {
-        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">range_proof</span>
+    <span class="kw">pub fn </span>range_proof(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>RangeProof {
+        <span class="kw-2">&amp;</span><span class="self">self</span>.range_proof
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">commitment</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">G1Affine</span> {
-        <span class="self">self</span>.<span class="ident">commitment</span>
-    }
-}
-
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RingCtTransaction</span> {
-    <span class="kw">pub</span> <span class="ident">mlsags</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">MlsagSignature</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">outputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">OutputProof</span><span class="op">&gt;</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">PartialOrd</span> <span class="kw">for</span> <span class="ident">RingCtTransaction</span> {
-    <span class="kw">fn</span> <span class="ident">partial_cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ordering</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">cmp</span>(<span class="ident">other</span>))
+    <span class="kw">pub fn </span>commitment(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; G1Affine {
+        <span class="self">self</span>.commitment
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Ord</span> <span class="kw">for</span> <span class="ident">RingCtTransaction</span> {
-    <span class="kw">fn</span> <span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="ident">Ordering</span> {
-        <span class="self">self</span>.<span class="ident">hash</span>().<span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="ident">hash</span>())
+<span class="attribute">#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(Serialize, Deserialize))]
+#[derive(Eq, PartialEq, Debug, Clone)]
+</span><span class="kw">pub struct </span>RingCtTransaction {
+    <span class="kw">pub </span>mlsags: Vec&lt;MlsagSignature&gt;,
+    <span class="kw">pub </span>outputs: Vec&lt;OutputProof&gt;,
+}
+
+<span class="kw">impl </span>PartialOrd <span class="kw">for </span>RingCtTransaction {
+    <span class="kw">fn </span>partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Ordering&gt; {
+        <span class="prelude-val">Some</span>(<span class="self">self</span>.cmp(other))
     }
 }
 
-<span class="kw">impl</span> <span class="ident">RingCtTransaction</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">v</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Default::default</span>();
-        <span class="kw">for</span> <span class="ident">m</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">mlsags</span>.<span class="ident">iter</span>() {
-            <span class="ident">v</span>.<span class="ident">extend</span>(<span class="kw-2">&amp;</span><span class="ident">m</span>.<span class="ident">to_bytes</span>());
+<span class="kw">impl </span>Ord <span class="kw">for </span>RingCtTransaction {
+    <span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; Ordering {
+        <span class="self">self</span>.hash().cmp(<span class="kw-2">&amp;</span>other.hash())
+    }
+}
+
+<span class="kw">impl </span>RingCtTransaction {
+    <span class="kw">pub fn </span>to_bytes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;u8&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>v: Vec&lt;u8&gt; = Default::default();
+        <span class="kw">for </span>m <span class="kw">in </span><span class="self">self</span>.mlsags.iter() {
+            v.extend(<span class="kw-2">&amp;</span>m.to_bytes());
         }
-        <span class="kw">for</span> <span class="ident">o</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">outputs</span>.<span class="ident">iter</span>() {
-            <span class="ident">v</span>.<span class="ident">extend</span>(<span class="kw-2">&amp;</span><span class="ident">o</span>.<span class="ident">to_bytes</span>());
+        <span class="kw">for </span>o <span class="kw">in </span><span class="self">self</span>.outputs.iter() {
+            v.extend(<span class="kw-2">&amp;</span>o.to_bytes());
         }
-        <span class="ident">v</span>
+        v
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; [<span class="ident">u8</span>; <span class="number">32</span>] {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sha3</span> <span class="op">=</span> <span class="ident">Sha3::v256</span>();
+    <span class="kw">pub fn </span>hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; [u8; <span class="number">32</span>] {
+        <span class="kw">let </span><span class="kw-2">mut </span>sha3 = Sha3::v256();
 
-        <span class="ident">sha3</span>.<span class="ident">update</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">to_bytes</span>());
+        sha3.update(<span class="kw-2">&amp;</span><span class="self">self</span>.to_bytes());
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hash</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
-        <span class="ident">sha3</span>.<span class="ident">finalize</span>(<span class="kw-2">&amp;mut</span> <span class="ident">hash</span>);
-        <span class="ident">hash</span>
+        <span class="kw">let </span><span class="kw-2">mut </span>hash = [<span class="number">0</span>; <span class="number">32</span>];
+        sha3.finalize(<span class="kw-2">&amp;mut </span>hash);
+        hash
     }
 
-    <span class="comment">// note: must match message generated by RingCtMaterial::sign()</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">gen_message</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-        <span class="comment">// All public keys in all rings</span>
-        <span class="kw">let</span> <span class="ident">public_keys</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">mlsags</span>.<span class="ident">iter</span>().<span class="ident">flat_map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="ident">m</span>.<span class="ident">public_keys</span>()).<span class="ident">collect</span>();
+    <span class="comment">// note: must match message generated by RingCtMaterial::sign()
+    </span><span class="kw">pub fn </span>gen_message(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;u8&gt; {
+        <span class="comment">// All public keys in all rings
+        </span><span class="kw">let </span>public_keys: Vec&lt;G1Affine&gt; = <span class="self">self</span>.mlsags.iter().flat_map(|m| m.public_keys()).collect();
 
-        <span class="comment">// All key-images (of true inputs),</span>
-        <span class="kw">let</span> <span class="ident">key_images</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">mlsags</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="ident">m</span>.<span class="ident">key_image</span>).<span class="ident">collect</span>();
+        <span class="comment">// All key-images (of true inputs),
+        </span><span class="kw">let </span>key_images: Vec&lt;G1Affine&gt; = <span class="self">self</span>.mlsags.iter().map(|m| m.key_image).collect();
 
-        <span class="comment">// All PseudoCommitments.</span>
-        <span class="kw">let</span> <span class="ident">pseudo_commitments</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span> <span class="op">=</span>
-            <span class="self">self</span>.<span class="ident">mlsags</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="ident">m</span>.<span class="ident">pseudo_commitment</span>()).<span class="ident">collect</span>();
+        <span class="comment">// All PseudoCommitments.
+        </span><span class="kw">let </span>pseudo_commitments: Vec&lt;G1Affine&gt; =
+            <span class="self">self</span>.mlsags.iter().map(|m| m.pseudo_commitment()).collect();
 
-        <span class="ident">gen_message_for_signing</span>(
-            <span class="kw-2">&amp;</span><span class="ident">public_keys</span>,
-            <span class="kw-2">&amp;</span><span class="ident">key_images</span>,
-            <span class="kw-2">&amp;</span><span class="ident">pseudo_commitments</span>,
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">outputs</span>,
+        gen_message_for_signing(
+            <span class="kw-2">&amp;</span>public_keys,
+            <span class="kw-2">&amp;</span>key_images,
+            <span class="kw-2">&amp;</span>pseudo_commitments,
+            <span class="kw-2">&amp;</span><span class="self">self</span>.outputs,
         )
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">public_commitments_per_ring</span>: <span class="kw-2">&amp;</span>[<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span>]) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">gen_message</span>();
-        <span class="kw">for</span> (<span class="ident">mlsag</span>, <span class="ident">public_commitments</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">mlsags</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">public_commitments_per_ring</span>) {
-            <span class="ident">mlsag</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">msg</span>, <span class="ident">public_commitments</span>)<span class="question-mark">?</span>
-        }
+    <span class="kw">pub fn </span>verify(<span class="kw-2">&amp;</span><span class="self">self</span>, public_commitments_per_ring: <span class="kw-2">&amp;</span>[Vec&lt;G1Affine&gt;]) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">let </span>msg = <span class="self">self</span>.gen_message();
+        <span class="kw">for </span>(mlsag, public_commitments) <span class="kw">in </span><span class="self">self</span>.mlsags.iter().zip(public_commitments_per_ring) {
+            mlsag.verify(<span class="kw-2">&amp;</span>msg, public_commitments)<span class="question-mark">?
+        </span>}
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prover_ts</span> <span class="op">=</span> <span class="ident">Transcript::new</span>(<span class="ident">MERLIN_TRANSCRIPT_LABEL</span>);
-        <span class="kw">let</span> <span class="ident">bp_gens</span> <span class="op">=</span> <span class="ident">RingCtMaterial::bp_gens</span>();
+        <span class="kw">let </span><span class="kw-2">mut </span>prover_ts = Transcript::new(MERLIN_TRANSCRIPT_LABEL);
+        <span class="kw">let </span>bp_gens = RingCtMaterial::bp_gens();
 
-        <span class="kw">for</span> <span class="ident">output</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">outputs</span>.<span class="ident">iter</span>() {
-            <span class="comment">// Verification requires a transcript with identical initial state:</span>
-            <span class="ident">output</span>.<span class="ident">range_proof</span>.<span class="ident">verify_single</span>(
-                <span class="kw-2">&amp;</span><span class="ident">bp_gens</span>,
-                <span class="kw-2">&amp;</span><span class="ident">RingCtMaterial::pc_gens</span>(),
-                <span class="kw-2">&amp;mut</span> <span class="ident">prover_ts</span>,
-                <span class="kw-2">&amp;</span><span class="ident">output</span>.<span class="ident">commitment</span>,
-                <span class="ident">RANGE_PROOF_BITS</span>,
+        <span class="kw">for </span>output <span class="kw">in </span><span class="self">self</span>.outputs.iter() {
+            <span class="comment">// Verification requires a transcript with identical initial state:
+            </span>output.range_proof.verify_single(
+                <span class="kw-2">&amp;</span>bp_gens,
+                <span class="kw-2">&amp;</span>RingCtMaterial::pc_gens(),
+                <span class="kw-2">&amp;mut </span>prover_ts,
+                <span class="kw-2">&amp;</span>output.commitment,
+                RANGE_PROOF_BITS,
             )<span class="question-mark">?</span>;
         }
 
-        <span class="comment">// Verify that the tx has at least one input</span>
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">mlsags</span>.<span class="ident">is_empty</span>() {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::TransactionMustHaveAnInput</span>);
+        <span class="comment">// Verify that the tx has at least one input
+        </span><span class="kw">if </span><span class="self">self</span>.mlsags.is_empty() {
+            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::TransactionMustHaveAnInput);
         }
 
-        <span class="comment">// Verify that each KeyImage is unique in this tx.</span>
-        <span class="kw">let</span> <span class="ident">keyimage_unique</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">mlsags</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="ident">m</span>.<span class="ident">key_image</span>.<span class="ident">to_compressed</span>())
-            .<span class="ident">collect</span>();
-        <span class="kw">if</span> <span class="ident">keyimage_unique</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">mlsags</span>.<span class="ident">len</span>() {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::KeyImageNotUniqueAcrossInputs</span>);
+        <span class="comment">// Verify that each KeyImage is unique in this tx.
+        </span><span class="kw">let </span>keyimage_unique: BTreeSet&lt;<span class="kw">_</span>&gt; = <span class="self">self
+            </span>.mlsags
+            .iter()
+            .map(|m| m.key_image.to_compressed())
+            .collect();
+        <span class="kw">if </span>keyimage_unique.len() != <span class="self">self</span>.mlsags.len() {
+            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::KeyImageNotUniqueAcrossInputs);
         }
 
-        <span class="comment">// Verify that each public_key is unique across all input mlsag</span>
-        <span class="kw">let</span> <span class="ident">pk_unique</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">mlsags</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">flat_map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> {
-                <span class="ident">m</span>.<span class="ident">public_keys</span>()
-                    .<span class="ident">iter</span>()
-                    .<span class="ident">map</span>(<span class="op">|</span><span class="ident">pk</span><span class="op">|</span> <span class="ident">pk</span>.<span class="ident">to_compressed</span>())
-                    .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">48</span>]<span class="op">&gt;</span><span class="op">&gt;</span>()
+        <span class="comment">// Verify that each public_key is unique across all input mlsag
+        </span><span class="kw">let </span>pk_unique: BTreeSet&lt;<span class="kw">_</span>&gt; = <span class="self">self
+            </span>.mlsags
+            .iter()
+            .flat_map(|m| {
+                m.public_keys()
+                    .iter()
+                    .map(|pk| pk.to_compressed())
+                    .collect::&lt;Vec&lt;[u8; <span class="number">48</span>]&gt;&gt;()
             })
-            .<span class="ident">collect</span>();
+            .collect();
 
-        <span class="kw">let</span> <span class="ident">pk_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">mlsags</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="ident">m</span>.<span class="ident">public_keys</span>().<span class="ident">len</span>()).<span class="ident">sum</span>();
+        <span class="kw">let </span>pk_count = <span class="self">self</span>.mlsags.iter().map(|m| m.public_keys().len()).sum();
 
-        <span class="kw">if</span> <span class="ident">pk_unique</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">pk_count</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::PublicKeyNotUniqueAcrossInputs</span>);
+        <span class="kw">if </span>pk_unique.len() != pk_count {
+            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::PublicKeyNotUniqueAcrossInputs);
         }
 
-        <span class="kw">let</span> <span class="ident">input_sum</span>: <span class="ident">G1Projective</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">mlsags</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="ident">MlsagSignature::pseudo_commitment</span>)
-            .<span class="ident">map</span>(<span class="ident">G1Projective::from</span>)
-            .<span class="ident">sum</span>();
-        <span class="kw">let</span> <span class="ident">output_sum</span>: <span class="ident">G1Projective</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">outputs</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="ident">OutputProof::commitment</span>)
-            .<span class="ident">map</span>(<span class="ident">G1Projective::from</span>)
-            .<span class="ident">sum</span>();
+        <span class="kw">let </span>input_sum: G1Projective = <span class="self">self
+            </span>.mlsags
+            .iter()
+            .map(MlsagSignature::pseudo_commitment)
+            .map(G1Projective::from)
+            .sum();
+        <span class="kw">let </span>output_sum: G1Projective = <span class="self">self
+            </span>.outputs
+            .iter()
+            .map(OutputProof::commitment)
+            .map(G1Projective::from)
+            .sum();
 
-        <span class="kw">if</span> <span class="ident">input_sum</span> <span class="op">!</span><span class="op">=</span> <span class="ident">output_sum</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">Error::InputPseudoCommitmentsDoNotSumToOutputCommitments</span>)
-        } <span class="kw">else</span> {
+        <span class="kw">if </span>input_sum != output_sum {
+            <span class="prelude-val">Err</span>(Error::InputPseudoCommitmentsDoNotSumToOutputCommitments)
+        } <span class="kw">else </span>{
             <span class="prelude-val">Ok</span>(())
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="ident">std::collections</span>::{<span class="ident">BTreeMap</span>, <span class="ident">BTreeSet</span>};
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+    <span class="kw">use </span>std::collections::{BTreeMap, BTreeSet};
 
-    <span class="kw">use</span> <span class="ident">bls_bulletproofs</span>::{
-        <span class="ident">group</span>::{<span class="ident">ff::Field</span>, <span class="ident">Curve</span>, <span class="ident">Group</span>},
-        <span class="ident">rand::rngs::OsRng</span>,
+    <span class="kw">use </span>bls_bulletproofs::{
+        group::{ff::Field, Curve, Group},
+        rand::rngs::OsRng,
     };
 
-    <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">DecoyInput</span>, <span class="ident">MlsagMaterial</span>, <span class="ident">TrueInput</span>};
+    <span class="kw">use crate</span>::{DecoyInput, MlsagMaterial, TrueInput};
 
-    <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+    <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
-    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
-    <span class="kw">struct</span> <span class="ident">TestLedger</span> {
-        <span class="ident">commitments</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">48</span>], <span class="ident">G1Affine</span><span class="op">&gt;</span>, <span class="comment">// Compressed public keys -&gt; Commitments</span>
-    }
+    <span class="attribute">#[derive(Default)]
+    </span><span class="kw">struct </span>TestLedger {
+        commitments: BTreeMap&lt;[u8; <span class="number">48</span>], G1Affine&gt;, <span class="comment">// Compressed public keys -&gt; Commitments
+    </span>}
 
-    <span class="kw">impl</span> <span class="ident">TestLedger</span> {
-        <span class="kw">fn</span> <span class="ident">log</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">public_key</span>: <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span>, <span class="ident">commitment</span>: <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span>) {
-            <span class="self">self</span>.<span class="ident">commitments</span>
-                .<span class="ident">insert</span>(<span class="ident">public_key</span>.<span class="ident">into</span>().<span class="ident">to_compressed</span>(), <span class="ident">commitment</span>.<span class="ident">into</span>());
+    <span class="kw">impl </span>TestLedger {
+        <span class="kw">fn </span>log(<span class="kw-2">&amp;mut </span><span class="self">self</span>, public_key: <span class="kw">impl </span>Into&lt;G1Affine&gt;, commitment: <span class="kw">impl </span>Into&lt;G1Affine&gt;) {
+            <span class="self">self</span>.commitments
+                .insert(public_key.into().to_compressed(), commitment.into());
         }
 
-        <span class="kw">fn</span> <span class="ident">lookup</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">public_key</span>: <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">G1Affine</span><span class="op">&gt;</span> {
-            <span class="self">self</span>.<span class="ident">commitments</span>
-                .<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">public_key</span>.<span class="ident">into</span>().<span class="ident">to_compressed</span>())
-                .<span class="ident">copied</span>()
+        <span class="kw">fn </span>lookup(<span class="kw-2">&amp;</span><span class="self">self</span>, public_key: <span class="kw">impl </span>Into&lt;G1Affine&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;G1Affine&gt; {
+            <span class="self">self</span>.commitments
+                .get(<span class="kw-2">&amp;</span>public_key.into().to_compressed())
+                .copied()
         }
 
-        <span class="kw">fn</span> <span class="ident">fetch_decoys</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">n</span>: <span class="ident">usize</span>, <span class="ident">exclude</span>: <span class="kw-2">&amp;</span>[<span class="ident">G1Projective</span>]) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">DecoyInput</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">exclude_set</span> <span class="op">=</span> <span class="ident">BTreeSet::from_iter</span>(<span class="ident">exclude</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="ident">G1Projective::to_compressed</span>));
+        <span class="kw">fn </span>fetch_decoys(<span class="kw-2">&amp;</span><span class="self">self</span>, n: usize, exclude: <span class="kw-2">&amp;</span>[G1Projective]) -&gt; Vec&lt;DecoyInput&gt; {
+            <span class="kw">let </span>exclude_set = BTreeSet::from_iter(exclude.iter().map(G1Projective::to_compressed));
 
-            <span class="self">self</span>.<span class="ident">commitments</span>
-                .<span class="ident">iter</span>()
-                .<span class="ident">filter</span>(<span class="op">|</span>(<span class="ident">pk</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="op">!</span><span class="ident">exclude_set</span>.<span class="ident">contains</span>(<span class="kw-2">*</span><span class="ident">pk</span>))
-                .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">pk</span>, <span class="ident">c</span>)<span class="op">|</span> <span class="ident">DecoyInput</span> {
-                    <span class="ident">public_key</span>: <span class="ident">G1Affine::from_compressed</span>(<span class="ident">pk</span>).<span class="ident">unwrap</span>(),
-                    <span class="ident">commitment</span>: <span class="kw-2">*</span><span class="ident">c</span>,
+            <span class="self">self</span>.commitments
+                .iter()
+                .filter(|(pk, <span class="kw">_</span>)| !exclude_set.contains(<span class="kw-2">*</span>pk))
+                .map(|(pk, c)| DecoyInput {
+                    public_key: G1Affine::from_compressed(pk).unwrap(),
+                    commitment: <span class="kw-2">*</span>c,
                 })
-                .<span class="ident">take</span>(<span class="ident">n</span>)
-                .<span class="ident">collect</span>()
+                .take(n)
+                .collect()
         }
     }
 
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_ringct_sign</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">OsRng::default</span>();
-        <span class="kw">let</span> <span class="ident">pc_gens</span> <span class="op">=</span> <span class="ident">PedersenGens::default</span>();
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>test_ringct_sign() {
+        <span class="kw">let </span><span class="kw-2">mut </span>rng = OsRng::default();
+        <span class="kw">let </span>pc_gens = PedersenGens::default();
 
-        <span class="kw">let</span> <span class="ident">true_input</span> <span class="op">=</span> <span class="ident">TrueInput</span> {
-            <span class="ident">secret_key</span>: <span class="ident">Scalar::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>),
-            <span class="ident">revealed_commitment</span>: <span class="ident">RevealedCommitment</span> {
-                <span class="ident">value</span>: <span class="number">3</span>,
-                <span class="ident">blinding</span>: <span class="number">5</span>.<span class="ident">into</span>(),
+        <span class="kw">let </span>true_input = TrueInput {
+            secret_key: Scalar::random(<span class="kw-2">&amp;mut </span>rng),
+            revealed_commitment: RevealedCommitment {
+                value: <span class="number">3</span>,
+                blinding: <span class="number">5</span>.into(),
             },
         };
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ledger</span> <span class="op">=</span> <span class="ident">TestLedger::default</span>();
-        <span class="ident">ledger</span>.<span class="ident">log</span>(
-            <span class="ident">true_input</span>.<span class="ident">public_key</span>(),
-            <span class="ident">true_input</span>.<span class="ident">revealed_commitment</span>.<span class="ident">commit</span>(<span class="kw-2">&amp;</span><span class="ident">pc_gens</span>),
+        <span class="kw">let </span><span class="kw-2">mut </span>ledger = TestLedger::default();
+        ledger.log(
+            true_input.public_key(),
+            true_input.revealed_commitment.commit(<span class="kw-2">&amp;</span>pc_gens),
         );
-        <span class="ident">ledger</span>.<span class="ident">log</span>(
-            <span class="ident">G1Projective::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>),
-            <span class="ident">G1Projective::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>),
+        ledger.log(
+            G1Projective::random(<span class="kw-2">&amp;mut </span>rng),
+            G1Projective::random(<span class="kw-2">&amp;mut </span>rng),
         );
-        <span class="ident">ledger</span>.<span class="ident">log</span>(
-            <span class="ident">G1Projective::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>),
-            <span class="ident">G1Projective::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>),
+        ledger.log(
+            G1Projective::random(<span class="kw-2">&amp;mut </span>rng),
+            G1Projective::random(<span class="kw-2">&amp;mut </span>rng),
         );
 
-        <span class="kw">let</span> <span class="ident">decoy_inputs</span> <span class="op">=</span> <span class="ident">ledger</span>.<span class="ident">fetch_decoys</span>(<span class="number">2</span>, <span class="kw-2">&amp;</span>[<span class="ident">true_input</span>.<span class="ident">public_key</span>()]);
+        <span class="kw">let </span>decoy_inputs = ledger.fetch_decoys(<span class="number">2</span>, <span class="kw-2">&amp;</span>[true_input.public_key()]);
 
-        <span class="kw">let</span> <span class="ident">ring_ct</span> <span class="op">=</span> <span class="ident">RingCtMaterial</span> {
-            <span class="ident">inputs</span>: <span class="macro">vec!</span>[<span class="ident">MlsagMaterial::new</span>(<span class="ident">true_input</span>, <span class="ident">decoy_inputs</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>)],
-            <span class="ident">outputs</span>: <span class="macro">vec!</span>[<span class="ident">Output</span> {
-                <span class="ident">public_key</span>: <span class="ident">G1Projective::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>).<span class="ident">to_affine</span>(),
-                <span class="ident">amount</span>: <span class="number">3</span>,
+        <span class="kw">let </span>ring_ct = RingCtMaterial {
+            inputs: <span class="macro">vec!</span>[MlsagMaterial::new(true_input, decoy_inputs, <span class="kw-2">&amp;mut </span>rng)],
+            outputs: <span class="macro">vec!</span>[Output {
+                public_key: G1Projective::random(<span class="kw-2">&amp;mut </span>rng).to_affine(),
+                amount: <span class="number">3</span>,
             }],
         };
 
-        <span class="kw">let</span> (<span class="ident">signed_tx</span>, <span class="ident">_revealed_output_commitments</span>) <span class="op">=</span>
-            <span class="ident">ring_ct</span>.<span class="ident">sign</span>(<span class="ident">rng</span>).<span class="ident">expect</span>(<span class="string">&quot;Failed to sign transaction&quot;</span>);
+        <span class="kw">let </span>(signed_tx, _revealed_output_commitments) =
+            ring_ct.sign(rng).expect(<span class="string">&quot;Failed to sign transaction&quot;</span>);
 
-        <span class="kw">let</span> <span class="ident">public_commitments</span> <span class="op">=</span> <span class="ident">Vec::from_iter</span>(<span class="ident">signed_tx</span>.<span class="ident">mlsags</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">mlsag</span><span class="op">|</span> {
-            <span class="ident">Vec::from_iter</span>(
-                <span class="ident">mlsag</span>
-                    .<span class="ident">public_keys</span>()
-                    .<span class="ident">into_iter</span>()
-                    .<span class="ident">map</span>(<span class="op">|</span><span class="ident">pk</span><span class="op">|</span> <span class="ident">ledger</span>.<span class="ident">lookup</span>(<span class="ident">pk</span>).<span class="ident">unwrap</span>()),
+        <span class="kw">let </span>public_commitments = Vec::from_iter(signed_tx.mlsags.iter().map(|mlsag| {
+            Vec::from_iter(
+                mlsag
+                    .public_keys()
+                    .into_iter()
+                    .map(|pk| ledger.lookup(pk).unwrap()),
             )
         }));
 
-        <span class="macro">assert!</span>(<span class="ident">signed_tx</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">public_commitments</span>).<span class="ident">is_ok</span>());
+        <span class="macro">assert!</span>(signed_tx.verify(<span class="kw-2">&amp;</span>public_commitments).is_ok());
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="bls_ringct" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0 (4b91a6ea7 2022-08-08)" ></div>
-</body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="bls_ringct" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>
