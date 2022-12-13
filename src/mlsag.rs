@@ -261,7 +261,7 @@ pub struct MlsagSignature {
 impl MlsagSignature {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut v: Vec<u8> = Default::default();
-        v.extend(&self.c0.to_bytes_le());
+        v.extend(self.c0.to_bytes_le());
         for (x, y) in self.r.iter() {
             v.extend(x.to_bytes_le());
             v.extend(y.to_bytes_le());
